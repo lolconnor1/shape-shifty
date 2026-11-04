@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 6429197945916275360}
   - component: {fileID: 811648585183107358}
   - component: {fileID: 1137111888654505852}
+  - component: {fileID: 8570005175254282129}
   m_Layer: 0
   m_Name: Rat
   m_TagString: Untagged
@@ -72,6 +73,21 @@ MonoBehaviour:
   aimOffset: {x: 0, y: 0.15, z: 0}
   model: {fileID: 8944612536883237445}
   shudder: 0.012
+--- !u!114 &8570005175254282129
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8994619299430415861}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: af8a40b396390be4b98816f7a72f9802, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  species: {fileID: 11400000, guid: 9b4e3530a53558343b8c0d697acfbb65, type: 2}
+  conversation: {fileID: 0}
+  turnSpeed: 540
 --- !u!1001 &4961257694424462455
 PrefabInstance:
   m_ObjectHideFlags: 0
