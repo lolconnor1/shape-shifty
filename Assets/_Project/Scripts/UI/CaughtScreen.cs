@@ -32,14 +32,7 @@ namespace ShapeShifty.UI
 
             Time.timeScale = 0f;
             var player = GameObject.FindWithTag("Player");
-            if (player != null)
-            {
-                player.GetComponent<PlayerController>().enabled = false;
-                player.GetComponent<PlayerLook>().enabled = false; // also unlocks the cursor
-                if (player.TryGetComponent(out PlayerScanner scanner)) scanner.enabled = false;
-                if (player.TryGetComponent(out PlayerShapeshifter shapeshifter)) shapeshifter.enabled = false;
-                if (player.TryGetComponent(out PlayerTalker talker)) talker.enabled = false;
-            }
+            if (player != null) PlayerControls.SetEnabled(player, false); // also frees the cursor
 
             panel.SetActive(true);
             EventSystem.current.SetSelectedGameObject(firstSelected);

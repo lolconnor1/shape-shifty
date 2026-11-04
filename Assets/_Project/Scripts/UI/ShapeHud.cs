@@ -9,13 +9,15 @@ using UnityEngine.UI;
 namespace ShapeShifty.UI
 {
     // On-screen feedback for shapeshifting: an aiming dot with a bar that fills up while
-    // scanning an animal, a prompt under it (also used for talking to animals), and the bar of known forms along the bottom of the screen. The bar
+    // scanning an animal, a prompt under it (also used for talking to animals and using
+    // things like levers), and the bar of known forms along the bottom of the screen. The bar
     // stays hidden until there's more than one form, and dims after a few seconds untouched.
     public class ShapeHud : MonoBehaviour
     {
         [SerializeField] PlayerScanner scanner;
         [SerializeField] PlayerShapeshifter shapeshifter;
         [SerializeField] PlayerTalker talker;
+        [SerializeField] PlayerInteractor interactor;
         [Tooltip("Used to show the right keys in the prompts.")]
         [SerializeField] InputActionAsset inputActions;
 
@@ -35,7 +37,7 @@ namespace ShapeShifty.UI
         [SerializeField, Range(0f, 1f)] float barIdleAlpha = 0.4f;
 
         readonly List<ShapeSlot> slots = new List<ShapeSlot>();
-        string scanKey, shiftKey, talkKey;
+        string scanKey, shiftKey, interactKey;
         string message;
         float messageUntil;
         float barShownUntil;
@@ -45,7 +47,7 @@ namespace ShapeShifty.UI
             var map = inputActions.FindActionMap("Player", true);
             scanKey = KeyName(map.FindAction("Scan", true));
             shiftKey = KeyName(map.FindAction("Shift", true));
-            talkKey = KeyName(map.FindAction("Interact", true));
+            interactKey = KeyName(map.FindAction("Interact", true));
             barHint.text = $"Scroll to choose  ·  {shiftKey} to change";
             slotTemplate.gameObject.SetActive(false);
             bar.alpha = 0f;
@@ -81,7 +83,9 @@ namespace ShapeShifty.UI
             else if (target != null)
                 text = scanner.Progress > 0f ? $"Scanning {target.Shape.displayName}..." : $"Hold {scanKey} to scan {target.Shape.displayName}";
             else if (talker.Target != null)
-                text = $"Press {talkKey} to talk to the {talker.Target.Species.displayName.ToLower()}";
+                text = $"Press {interactKey} to talk to the {talker.Target.Species.displayName.ToLower()}";
+            else if (interactor.Target != null)
+                text = interactor.CanUseTarget ? $"Press {interactKey} to {interactor.Target.Action}" : interactor.Target.WrongShapeHint;
             promptPanel.SetActive(text != null);
             if (text != null) prompt.text = text;
 
