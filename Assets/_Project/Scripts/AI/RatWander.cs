@@ -1,3 +1,4 @@
+using ShapeShifty.Dialogue;
 using ShapeShifty.Shapes;
 using UnityEngine;
 
@@ -5,7 +6,8 @@ namespace ShapeShifty.AI
 {
     // Scurries between random spots near a home point (the dumpster), stopping for a
     // moment at each one. Only picks spots on open ground that it can reach in a straight
-    // line without running into anything. Freezes on the spot while being scanned.
+    // line without running into anything. Freezes on the spot while being scanned, and
+    // stops to chat when a rat-shaped player talks to it.
     public class RatWander : MonoBehaviour
     {
         [Tooltip("The spot the rat stays near.")]
@@ -20,18 +22,28 @@ namespace ShapeShifty.AI
         [SerializeField] Transform body;
 
         Scannable scannable;
+        Talkable talkable;
         Vector3 destination;
         bool running;
         float pauseTimer;
         float bobPhase;
 
-        void Awake() => scannable = GetComponent<Scannable>();
+        void Awake()
+        {
+            scannable = GetComponent<Scannable>();
+            talkable = GetComponent<Talkable>();
+        }
 
         void Start() => pauseTimer = Random.Range(pauseTime.x, pauseTime.y);
 
         void Update()
         {
             if (scannable != null && scannable.IsBeingScanned) return; // frozen by the scanner
+            if (talkable != null && talkable.IsTalking)
+            {
+                body.localPosition = Vector3.zero; // stand still; Talkable turns it to face the player
+                return;
+            }
 
             if (!running)
             {

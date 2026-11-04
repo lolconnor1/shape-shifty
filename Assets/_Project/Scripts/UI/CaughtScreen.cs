@@ -38,6 +38,7 @@ namespace ShapeShifty.UI
                 player.GetComponent<PlayerLook>().enabled = false; // also unlocks the cursor
                 if (player.TryGetComponent(out PlayerScanner scanner)) scanner.enabled = false;
                 if (player.TryGetComponent(out PlayerShapeshifter shapeshifter)) shapeshifter.enabled = false;
+                if (player.TryGetComponent(out PlayerTalker talker)) talker.enabled = false;
             }
 
             panel.SetActive(true);
