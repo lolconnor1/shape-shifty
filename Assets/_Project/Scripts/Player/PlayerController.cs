@@ -48,6 +48,13 @@ namespace ShapeShifty.Player
         void OnEnable() => playerMap.Enable();
         void OnDisable() => playerMap.Disable();
 
+        // Turns the model to face a direction straight away, e.g. during a cutscene.
+        public void FaceTowards(Vector3 direction)
+        {
+            direction.y = 0f;
+            if (direction.sqrMagnitude > 0.0001f) body.rotation = Quaternion.LookRotation(direction);
+        }
+
         // Called by PlayerShapeshifter whenever the player changes form.
         public void SetMovement(float moveSpeed, float sprintSpeed, float jumpHeight)
         {

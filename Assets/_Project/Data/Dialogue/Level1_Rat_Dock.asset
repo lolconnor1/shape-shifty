@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ed6278055cdb5e842a597a9f83d025ef, type: 3}
+  m_Name: Level1_Rat_Dock
+  m_EditorClassIdentifier: 
+  lines:
+  - byPlayer: 0
+    text: Careful! See the camera over the conveyor? Cameras don't care what you
+      look like. They'll spot a rat as quick as anyone.
+  - byPlayer: 0
+    text: That belt's the only way into the cold store, and the camera's power switch
+      is in the security office.
+  - byPlayer: 0
+    text: The guard in there never leaves his monitors... unless the dock alarm by
+      the truck goes off. Even I can reach that button.
+  - byPlayer: 1
+    text: Alarm, office, switch, belt. Got it.

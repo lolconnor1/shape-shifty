@@ -100,6 +100,20 @@ namespace ShapeShifty.Player
             Changed?.Invoke();
         }
 
+        // Switches straight into a known form with no effect, e.g. arriving in a level as a rat.
+        public void StartAs(ShapeDefinition shape)
+        {
+            int index = available.IndexOf(shape);
+            if (index < 0 || shape == Current) return;
+            currentModel.SetActive(false);
+            currentModel = GetModel(shape);
+            currentModel.SetActive(true);
+            ApplyForm(shape);
+            Current = shape;
+            SnapCamera(shape);
+            Select(index);
+        }
+
         void OnUnlocked(ShapeDefinition shape)
         {
             RebuildAvailable();

@@ -12,7 +12,7 @@ namespace ShapeShifty.AI
     // cover that hides the player visibly blocks the cone too. The cone tints from calm to
     // alarmed as detection rises, and fades out with distance as detection weakens. It
     // disappears while the player is in a form this employee ignores, and comes back as
-    // soon as they start changing out of it.
+    // soon as they start changing out of it. Disabling it stops it watching and hides the cone.
     public class VisionCone : MonoBehaviour
     {
         [Header("Sight")]
@@ -37,6 +37,8 @@ namespace ShapeShifty.AI
         [SerializeField] float fastSpeed = 8f;
         [Tooltip("Detection speed multiplier while the player is seen changing form. Replaces the movement and disguise multipliers.")]
         [SerializeField] float shiftingMultiplier = 4f;
+        [Tooltip("Treat every form as fully suspicious, even ones employees ignore. For security cameras, which see rats too.")]
+        [SerializeField] bool seesThroughDisguises;
         [Tooltip("Detection lost per second while the player is out of sight or not suspicious.")]
         [SerializeField] float decayRate = 0.35f;
         public UnityEvent onSpotted;
@@ -100,6 +102,16 @@ namespace ShapeShifty.AI
             Destroy(fadeTexture);
         }
 
+        // Switched off: forget the player and hide the cone. It fades back in when switched on.
+        void OnDisable()
+        {
+            Detection = 0f;
+            IsSpotted = false;
+            CanSeeTarget = false;
+            coneVisibility = 0f;
+            if (coneRenderer != null) coneRenderer.enabled = false;
+        }
+
         // Alpha ramp along U (0 = at the employee, 1 = full range). Follows Falloff, squared so
         // the cone visibly fades out towards its edge rather than ending at a faint tint.
         Texture2D BuildFadeTexture()
@@ -157,11 +169,12 @@ namespace ShapeShifty.AI
         {
             if (targetShapeshifter == null) return MovementMultiplier();
             if (targetShapeshifter.IsShifting) return shiftingMultiplier;
+            if (seesThroughDisguises) return MovementMultiplier();
             return MovementMultiplier() * targetShapeshifter.Current.suspicion;
         }
 
         bool TargetIgnored() =>
-            targetShapeshifter != null && !targetShapeshifter.IsShifting && targetShapeshifter.Current.suspicion <= 0f;
+            !seesThroughDisguises && targetShapeshifter != null && !targetShapeshifter.IsShifting && targetShapeshifter.Current.suspicion <= 0f;
 
         // Moving targets are easier to notice: slow when still, fast when sprinting.
         float MovementMultiplier()

@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ed6278055cdb5e842a597a9f83d025ef, type: 3}
+  m_Name: Level01_Rat_Warehouse
+  m_EditorClassIdentifier: 
+  lines:
+  - byPlayer: 0
+    text: Psst! Looking for the way out? The drain pipe in the back corner goes right
+      under the wall.
+  - byPlayer: 0
+    text: Trouble is, someone bolted a cover over it. There's a lever on the far
+      wall that lifts it.
+  - byPlayer: 0
+    text: Rats can't pull levers, mind. You'd need hands for that.
+  - byPlayer: 0
+    text: And the fella at the desk never takes his eyes off it... unless that rattly
+      old machine goes off.
+  - byPlayer: 0
+    text: Big red button on the side. Even a rat can hit it.
+  - byPlayer: 1
+    text: Got it. Thanks!
