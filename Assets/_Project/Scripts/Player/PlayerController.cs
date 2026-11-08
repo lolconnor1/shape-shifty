@@ -29,12 +29,19 @@ namespace ShapeShifty.Player
         [Tooltip("The visual model, turned to face the direction of travel.")]
         [SerializeField] Transform body;
 
+        // What the player is standing on, if anything. Moving platforms use it to carry them.
+        public Collider Ground { get; private set; }
+        // Set while the player is stunned: move and jump input are ignored, but gravity still
+        // applies and the camera can still look round.
+        public bool Frozen { get; set; }
+
         CharacterController controller;
         InputActionMap playerMap;
         InputAction moveAction, jumpAction, sprintAction;
         Vector3 horizontalVelocity;
         float verticalVelocity;
         float turnVelocity;
+        Collider groundHit;
 
         void Awake()
         {
@@ -48,6 +55,13 @@ namespace ShapeShifty.Player
         void OnEnable() => playerMap.Enable();
         void OnDisable() => playerMap.Disable();
 
+        // Turns the model to face a direction straight away, e.g. during a cutscene.
+        public void FaceTowards(Vector3 direction)
+        {
+            direction.y = 0f;
+            if (direction.sqrMagnitude > 0.0001f) body.rotation = Quaternion.LookRotation(direction);
+        }
+
         // Called by PlayerShapeshifter whenever the player changes form.
         public void SetMovement(float moveSpeed, float sprintSpeed, float jumpHeight)
         {
@@ -58,7 +72,7 @@ namespace ShapeShifty.Player
 
         void Update()
         {
-            Vector2 input = moveAction.ReadValue<Vector2>();
+            Vector2 input = Frozen ? Vector2.zero : moveAction.ReadValue<Vector2>();
             float speed = sprintAction.IsPressed() ? sprintSpeed : moveSpeed;
             Vector3 targetVelocity = Vector3.zero;
 
@@ -74,11 +88,19 @@ namespace ShapeShifty.Player
             if (controller.isGrounded)
             {
                 if (verticalVelocity < 0f) verticalVelocity = -2f; // keep snapped to slopes
-                if (jumpAction.WasPressedThisFrame()) verticalVelocity = Mathf.Sqrt(jumpHeight * -2f * gravity);
+                if (!Frozen && jumpAction.WasPressedThisFrame()) verticalVelocity = Mathf.Sqrt(jumpHeight * -2f * gravity);
             }
             verticalVelocity += gravity * Time.deltaTime;
 
+            groundHit = null;
             controller.Move((horizontalVelocity + Vector3.up * verticalVelocity) * Time.deltaTime);
+            Ground = controller.isGrounded ? groundHit : null;
+        }
+
+        // Called during Move for everything the controller touches.
+        void OnControllerColliderHit(ControllerColliderHit hit)
+        {
+            if (hit.normal.y > 0.5f) groundHit = hit.collider;
         }
     }
 }

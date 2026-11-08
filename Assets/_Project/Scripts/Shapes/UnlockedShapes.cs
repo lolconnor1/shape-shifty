@@ -30,6 +30,13 @@ namespace ShapeShifty.Shapes
         public static void ForgetSinceLevelStart() =>
             shapes.RemoveRange(countAtLevelStart, shapes.Count - countAtLevelStart);
 
+        // Call when going back to the main menu, which starts a fresh run.
+        public static void ForgetAll()
+        {
+            shapes.Clear();
+            countAtLevelStart = 0;
+        }
+
         // Every scene load starts a level with whatever forms the player has at that point.
         static void OnSceneLoaded(Scene scene, LoadSceneMode mode) => countAtLevelStart = shapes.Count;
 

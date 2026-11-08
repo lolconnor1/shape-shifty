@@ -5241,6 +5241,7 @@ MonoBehaviour:
   scanner: {fileID: 3865429087305383182}
   shapeshifter: {fileID: 7114414937195183020}
   talker: {fileID: 6088912549947914049}
+  interactor: {fileID: 4726801593149366182}
   inputActions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
   reticle: {fileID: 7194418839728348382}
   reticleFill: {fileID: 3371747899427443951}
@@ -11401,7 +11402,7 @@ MonoBehaviour:
     Enabled: 1
     CollisionFilter:
       serializedVersion: 2
-      m_Bits: 4294967291
+      m_Bits: 4294967227
     IgnoreTag: Player
     CameraRadius: 0.2
     DampingIntoCollision: 0.15
@@ -11881,6 +11882,8 @@ GameObject:
   - component: {fileID: 3865429087305383182}
   - component: {fileID: 7114414937195183020}
   - component: {fileID: 6088912549947914049}
+  - component: {fileID: 4726801593149366182}
+  - component: {fileID: 2805939241710391792}
   m_Layer: 0
   m_Name: Player
   m_TagString: Player
@@ -12012,6 +12015,7 @@ MonoBehaviour:
   follow: {fileID: 7909918493124502043}
   cameraBlendTime: 0.5
   shiftDuration: 0.4
+  cooldown: 2
   puff: {fileID: 6893792143729107217}
   obstacleMask:
     serializedVersion: 2
@@ -12032,6 +12036,37 @@ MonoBehaviour:
   range: 1.5
   leaveDistance: 3
   typingSpeed: 45
+--- !u!114 &4726801593149366182
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8222839705844513162}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f58620656f7450c4e96740a566db5b9e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  inputActions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
+  talker: {fileID: 6088912549947914049}
+  range: 1.5
+  reachHeight: 2
+--- !u!114 &2805939241710391792
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8222839705844513162}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 32607a36ed975cc498738c3c5e3c7ee1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  body: {fileID: 2861225977111880633}
+  jolt: 0.04
+  joltAngle: 8
 --- !u!1 &8447978046315049388
 GameObject:
   m_ObjectHideFlags: 0
