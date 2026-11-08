@@ -46,10 +46,7 @@ namespace ShapeShifty.UI
             SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
         }
 
-        // Main Menu button. There's no main menu yet, so this does nothing for now.
-        public void GoToMainMenu()
-        {
-            Debug.Log("Main menu isn't built yet.");
-        }
+        // Main Menu button. Going back there starts a fresh run, so every scanned form is lost.
+        public void GoToMainMenu() => MainMenu.Open();
     }
 }
