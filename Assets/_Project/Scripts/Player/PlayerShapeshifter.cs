@@ -11,6 +11,7 @@ namespace ShapeShifty.Player
     // Turns the player into any form they've scanned. Previous / Next (scroll wheel, d-pad)
     // choose a form and Shift changes into it. Changing takes a moment: the old model shrinks
     // away in a puff, the collider, speeds and camera switch over, and the new model grows in.
+    // After each change there's a short cooldown before the next one.
     // Employees who see it happen get suspicious fast (see VisionCone).
     [RequireComponent(typeof(CharacterController), typeof(PlayerController))]
     public class PlayerShapeshifter : MonoBehaviour
@@ -32,6 +33,8 @@ namespace ShapeShifty.Player
 
         [Header("Shifting")]
         [SerializeField] float shiftDuration = 0.4f;
+        [Tooltip("Seconds after a change finishes before the player can change again.")]
+        [SerializeField] float cooldown = 2f;
         [SerializeField] ParticleSystem puff;
         [Tooltip("Layers that stop the player growing into a bigger form. Ignore Raycast (the invisible level bounds) is left out.")]
         [SerializeField] LayerMask obstacleMask = ~(1 << 2);
@@ -41,11 +44,15 @@ namespace ShapeShifty.Player
         public int SelectedIndex { get; private set; }
         public IReadOnlyList<ShapeDefinition> Available => available;
         public bool IsShifting { get; private set; }
+        // Seconds until the player can change again; 0 when ready.
+        public float CooldownLeft => Mathf.Max(0f, readyAt - Time.time);
 
         // Selection, the list of forms, or the current form changed.
         public event Action Changed;
         // Shift was pressed but the selected form doesn't fit here.
         public event Action<ShapeDefinition> ShiftBlocked;
+        // Shift was pressed before the cooldown from the last change ran out.
+        public event Action ShiftTooSoon;
 
         readonly List<ShapeDefinition> available = new List<ShapeDefinition>();
         readonly Dictionary<ShapeDefinition, GameObject> models = new Dictionary<ShapeDefinition, GameObject>();
@@ -55,6 +62,7 @@ namespace ShapeShifty.Player
         InputAction previousAction, nextAction, shiftAction;
         GameObject currentModel;
         Coroutine cameraBlend;
+        float readyAt;
 
         void Awake()
         {
@@ -89,7 +97,8 @@ namespace ShapeShifty.Player
             if (nextAction.WasPressedThisFrame()) Select(SelectedIndex + 1);
             if (shiftAction.WasPressedThisFrame() && !IsShifting && Selected != Current)
             {
-                if (HasRoomFor(Selected)) StartCoroutine(Shift(Selected));
+                if (CooldownLeft > 0f) ShiftTooSoon?.Invoke();
+                else if (HasRoomFor(Selected)) StartCoroutine(Shift(Selected));
                 else ShiftBlocked?.Invoke(Selected);
             }
         }
@@ -148,6 +157,7 @@ namespace ShapeShifty.Player
 
             yield return ScaleVisual(0f, 1f, half);
             IsShifting = false;
+            readyAt = Time.time + cooldown;
             Changed?.Invoke();
         }
 

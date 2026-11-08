@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace ShapeShifty.AI
@@ -7,6 +8,7 @@ namespace ShapeShifty.AI
     // As soon as the vision cone picks up the player, the employee stops and stares at
     // where they were last seen until detection drains away, then carries on.
     // Investigate() pulls them off their route to go and look at something, like a noise.
+    // Stun() puts them out of action for a while, e.g. after an electric shock.
     [RequireComponent(typeof(VisionCone))]
     public class EmployeePatrol : MonoBehaviour
     {
@@ -40,6 +42,14 @@ namespace ShapeShifty.AI
         [Tooltip("The \"?\" shown above the head while investigating something. Turned to face the camera; its first child pops in and bobs.")]
         [SerializeField] GameObject investigateIcon;
 
+        [Header("Stunned")]
+        [Tooltip("How long (s) the shock itself lasts: shaking on the spot, before standing about dazed.")]
+        [SerializeField] float shakeTime = 1.5f;
+        [Tooltip("Spun above the head while dazed. Best placed under Visual, so it leans with the body.")]
+        [SerializeField] GameObject dazedIcon;
+
+        public static readonly List<EmployeePatrol> All = new List<EmployeePatrol>();
+
         static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
 
         VisionCone vision;
@@ -61,7 +71,12 @@ namespace ShapeShifty.AI
         Transform investigateMark;
         float investigateIconTimer;
 
+        float stunTimer;
+        float stunElapsed;
+        Vector3 visualRest;
+
         public bool IsInvestigating => investigating;
+        public bool IsStunned => stunTimer > 0f;
 
         void Awake()
         {
@@ -70,9 +85,25 @@ namespace ShapeShifty.AI
             block = new MaterialPropertyBlock();
             if (visual != null) visualHeight = visual.localPosition.y;
             if (investigateIcon != null) investigateMark = investigateIcon.transform.GetChild(0);
+            if (dazedIcon != null) dazedIcon.SetActive(false);
         }
 
+        void OnEnable() => All.Add(this);
+        void OnDisable() => All.Remove(this);
+
         void Start() => viewCamera = Camera.main != null ? Camera.main.transform : null;
+
+        // Out of action for a while: stops dead, stops watching, shakes through the shock and
+        // then stands about dazed until the time's up, and carries on with the route.
+        public void Stun(float seconds)
+        {
+            if (!IsStunned && visual != null) visualRest = visual.localPosition;
+            stunTimer = Mathf.Max(stunTimer, seconds);
+            stunElapsed = 0f;
+            investigating = false;
+            waiting = false;
+            vision.enabled = false;
+        }
 
         // Leave the route, walk to spot, look the way facing points for lookTime seconds, then
         // go back to the route.
@@ -89,6 +120,11 @@ namespace ShapeShifty.AI
 
         void Update()
         {
+            if (IsStunned)
+            {
+                Stunned();
+                return;
+            }
             if (vision.Detection > 0f)
                 TurnTowards(vision.LastSeenPosition - transform.position);
             else if (investigating)
@@ -113,6 +149,35 @@ namespace ShapeShifty.AI
             if (investigateTimer >= investigateTime) investigating = false;
         }
 
+        void Stunned()
+        {
+            stunTimer -= Time.deltaTime;
+            stunElapsed += Time.deltaTime;
+            if (stunTimer <= 0f)
+            {
+                stunTimer = 0f;
+                vision.enabled = true;
+                if (visual != null) visual.SetLocalPositionAndRotation(visualRest, Quaternion.identity);
+                return;
+            }
+            if (visual == null) return;
+
+            if (stunElapsed < shakeTime)
+            {
+                // Jolting about while the current runs through them.
+                visual.SetLocalPositionAndRotation(
+                    visualRest + new Vector3(Random.Range(-0.04f, 0.04f), 0f, Random.Range(-0.04f, 0.04f)),
+                    Quaternion.Euler(Random.Range(-7f, 7f), 0f, Random.Range(-7f, 7f)));
+            }
+            else
+            {
+                // Then slumped forward, swaying.
+                float t = stunElapsed - shakeTime;
+                visual.SetLocalPositionAndRotation(visualRest,
+                    Quaternion.Euler(14f + Mathf.Sin(t * 1.7f) * 4f, 0f, Mathf.Sin(t * 1.1f) * 7f));
+            }
+        }
+
         void UpdateSitting()
         {
             if (visual == null || !sitWhileWaiting) return;
@@ -127,6 +192,15 @@ namespace ShapeShifty.AI
         {
             UpdateAlertIcon();
             UpdateInvestigateIcon();
+            UpdateDazedIcon();
+        }
+
+        void UpdateDazedIcon()
+        {
+            if (dazedIcon == null) return;
+            bool show = IsStunned && stunElapsed >= shakeTime;
+            if (dazedIcon.activeSelf != show) dazedIcon.SetActive(show);
+            if (show) dazedIcon.transform.localRotation = Quaternion.Euler(0f, Time.time * 200f, 0f);
         }
 
         void Patrol()

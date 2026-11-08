@@ -12,6 +12,7 @@ namespace ShapeShifty.UI
     // scanning an animal, a prompt under it (also used for talking to animals and using
     // things like levers), and the bar of known forms along the bottom of the screen. The bar
     // stays hidden until there's more than one form, and dims after a few seconds untouched.
+    // While shapeshifting is cooling down, the bar stays lit and its hint counts down.
     public class ShapeHud : MonoBehaviour
     {
         [SerializeField] PlayerScanner scanner;
@@ -38,6 +39,8 @@ namespace ShapeShifty.UI
 
         readonly List<ShapeSlot> slots = new List<ShapeSlot>();
         string scanKey, shiftKey, interactKey;
+        string idleHint;
+        int shownCooldownTenths = -1;
         string message;
         float messageUntil;
         float barShownUntil;
@@ -48,7 +51,8 @@ namespace ShapeShifty.UI
             scanKey = KeyName(map.FindAction("Scan", true));
             shiftKey = KeyName(map.FindAction("Shift", true));
             interactKey = KeyName(map.FindAction("Interact", true));
-            barHint.text = $"Scroll to choose  ·  {shiftKey} to change";
+            idleHint = $"Scroll to choose  ·  {shiftKey} to change";
+            barHint.text = idleHint;
             slotTemplate.gameObject.SetActive(false);
             bar.alpha = 0f;
         }
@@ -58,6 +62,7 @@ namespace ShapeShifty.UI
             scanner.Scanned += OnScanned;
             shapeshifter.Changed += RefreshBar;
             shapeshifter.ShiftBlocked += OnShiftBlocked;
+            shapeshifter.ShiftTooSoon += OnShiftTooSoon;
         }
 
         void OnDisable()
@@ -65,6 +70,7 @@ namespace ShapeShifty.UI
             scanner.Scanned -= OnScanned;
             shapeshifter.Changed -= RefreshBar;
             shapeshifter.ShiftBlocked -= OnShiftBlocked;
+            shapeshifter.ShiftTooSoon -= OnShiftTooSoon;
         }
 
         void Start() => RefreshBar();
@@ -89,15 +95,28 @@ namespace ShapeShifty.UI
             promptPanel.SetActive(text != null);
             if (text != null) prompt.text = text;
 
+            float cooldown = shapeshifter.CooldownLeft;
+            ShowCooldown(cooldown);
             float alpha = shapeshifter.Available.Count < 2 ? 0f
-                : Time.unscaledTime < barShownUntil || shapeshifter.IsShifting ? 1f
+                : Time.unscaledTime < barShownUntil || shapeshifter.IsShifting || cooldown > 0f ? 1f
                 : barIdleAlpha;
             bar.alpha = Mathf.MoveTowards(bar.alpha, alpha, Time.unscaledDeltaTime * 4f);
+        }
+
+        // Only touches the text when the tenths change.
+        void ShowCooldown(float seconds)
+        {
+            int tenths = Mathf.CeilToInt(seconds * 10f);
+            if (tenths == shownCooldownTenths) return;
+            shownCooldownTenths = tenths;
+            barHint.text = tenths > 0 ? $"Can change again in {tenths / 10f:0.0}s" : idleHint;
         }
 
         void OnScanned(ShapeDefinition shape) => ShowMessage($"{shape.displayName} scanned! Press {shiftKey} to become one");
 
         void OnShiftBlocked(ShapeDefinition shape) => ShowMessage($"No room to become a {shape.displayName.ToLower()} here");
+
+        void OnShiftTooSoon() => ShowMessage("Too soon to change again");
 
         void ShowMessage(string text)
         {

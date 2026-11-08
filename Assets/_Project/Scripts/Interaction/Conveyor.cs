@@ -58,7 +58,9 @@ namespace ShapeShifty.Interaction
         {
             if (beltRenderer == null) return;
             float length = belt.lossyScale.z;
-            scroll = Mathf.Repeat(scroll - metres * texturePerMetre, 1f);
+            // A cube's top face runs its texture from its front edge (+z) to its back, so a bigger
+            // offset moves the pattern forward.
+            scroll = Mathf.Repeat(scroll + metres * texturePerMetre, 1f);
             beltRenderer.GetPropertyBlock(block);
             block.SetVector(BaseMapStId, new Vector4(1f, length * texturePerMetre, 0f, scroll));
             beltRenderer.SetPropertyBlock(block);
