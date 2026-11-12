@@ -40,6 +40,8 @@ namespace ShapeShifty.Player
         [SerializeField] LayerMask obstacleMask = ~(1 << 2);
 
         public ShapeDefinition Current { get; private set; }
+        // How suspicious employees find the current form right here (see BlendInZone).
+        public float Suspicion => BlendInZone.Hides(Current, transform.position) ? 0f : Current.suspicion;
         public ShapeDefinition Selected => available[SelectedIndex];
         public int SelectedIndex { get; private set; }
         public IReadOnlyList<ShapeDefinition> Available => available;
@@ -191,7 +193,7 @@ namespace ShapeShifty.Player
             controller.center = Vector3.up * (shape.height * 0.5f);
             controller.skinWidth = shape.skinWidth;
             controller.stepOffset = shape.stepOffset;
-            mover.SetMovement(shape.moveSpeed, shape.sprintSpeed, shape.jumpHeight);
+            mover.SetForm(shape);
         }
 
         // Growing could push the player into a ceiling or wall, so check the bigger capsule

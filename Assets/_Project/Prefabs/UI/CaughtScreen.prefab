@@ -252,6 +252,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   panel: {fileID: 6359440711282108717}
+  title: {fileID: 8381973301830177196}
   firstSelected: {fileID: 6467479567550892227}
 --- !u!1 &4136094993866099361
 GameObject:

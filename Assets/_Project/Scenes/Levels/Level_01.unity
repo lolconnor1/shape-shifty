@@ -52844,7 +52844,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4945469018295164159, guid: 08fdad8ff421f4a418e95fcd985be404, type: 3}
       propertyPath: nextScene
-      value: 
+      value: Level_02
       objectReference: {fileID: 0}
     - target: {fileID: 4945469018295164159, guid: 08fdad8ff421f4a418e95fcd985be404, type: 3}
       propertyPath: screenFade

@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ed6278055cdb5e842a597a9f83d025ef, type: 3}
+  m_Name: Level02_Penguin_Pool
+  m_EditorClassIdentifier: 
+  lines:
+  - byPlayer: 0
+    text: Careful by the edge, new one.
+  - byPlayer: 0
+    text: Anything in there that isn't a penguin sinks like a stone. It's quite funny
+      to watch.
+  - byPlayer: 0
+    text: Fancy a go on the ice slide? There's a snow ramp up the side of the big
+      rock. Come off the bottom fast enough and you'd knock that boulder clean into
+      the pool.
+  - byPlayer: 1
+    text: Noted.

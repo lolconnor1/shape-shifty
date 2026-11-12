@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ed6278055cdb5e842a597a9f83d025ef, type: 3}
+  m_Name: Level02_Penguin_Pin
+  m_EditorClassIdentifier: 
+  lines:
+  - byPlayer: 0
+    text: Oof. My turn to be the pin. Knock me over, go on!
+  - byPlayer: 0
+    text: Crouch to flop, come at me off the ice, and I'll go flying. The faster
+      you're going, the further.

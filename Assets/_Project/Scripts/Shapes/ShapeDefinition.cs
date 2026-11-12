@@ -35,7 +35,26 @@ namespace ShapeShifty.Shapes
         public float verticalArmLength = 0.3f;
 
         [Header("Disguise")]
-        [Tooltip("How quickly employees get suspicious of this form compared with a person. 0 = ignored completely.")]
+        [Tooltip("How quickly employees get suspicious of this form compared with a person. 0 = ignored completely. Ignored completely anyway inside a BlendInZone for this form.")]
         [Range(0f, 1f)] public float suspicion = 1f;
+
+        [Header("Swimming")]
+        [Tooltip("Swims in deep water (see DeepWater) instead of sinking to the bottom. Crouch dives, Jump swims up, and Jump at the surface leaps out.")]
+        public bool canSwim;
+        public float swimSpeed = 6f;
+        [Tooltip("How high Jump throws a swimmer out of the water.")]
+        public float leapHeight = 1.4f;
+
+        [Header("Breath")]
+        [Tooltip("Seconds this form can stay under deep water before drowning. Swimmers never drown.")]
+        public float breathTime = 4f;
+
+        [Header("Belly Slide")]
+        [Tooltip("Crouch flops onto the belly and slides for as long as it's held: quick and hard to steer, and faster still on ice (see IcySurface) and downhill.")]
+        public bool canBellySlide;
+        [Tooltip("Speed a slide starts at and can be paddled up to. Ice and slopes take it higher.")]
+        public float slideSpeed = 7f;
+        [Tooltip("Collider height while sliding. No less than twice the radius.")]
+        public float slideHeight = 0.45f;
     }
 }
