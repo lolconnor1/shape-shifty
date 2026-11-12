@@ -28,3 +28,10 @@ MonoBehaviour:
   shoulderOffset: {x: 0.35, y: 0.1, z: 0}
   verticalArmLength: 0.1
   suspicion: 0
+  canSwim: 0
+  swimSpeed: 6
+  leapHeight: 1.4
+  breathTime: 2.5
+  canBellySlide: 0
+  slideSpeed: 7
+  slideHeight: 0.45

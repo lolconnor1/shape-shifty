@@ -1,3 +1,4 @@
+using ShapeShifty.Interaction;
 using ShapeShifty.Player;
 using UnityEngine;
 using UnityEngine.Events;
@@ -7,7 +8,8 @@ namespace ShapeShifty.AI
     // Sees the player when they're inside a horizontal cone with a clear line of sight,
     // and fills a detection meter while they stay seen. How fast it fills depends on
     // distance, how fast the player moves, and their current form: animals that belong
-    // here barely register, but changing form in plain sight is very noticeable.
+    // here barely register, but changing form in plain sight is very noticeable. A player
+    // completely under deep water can't be seen at all.
     // Also draws the cone on the ground, cut short by anything waist-high or taller, so
     // cover that hides the player visibly blocks the cone too. The cone tints from calm to
     // alarmed as detection rises, and fades out with distance as detection weakens. It
@@ -51,6 +53,8 @@ namespace ShapeShifty.AI
         [SerializeField] Color alarmedColor = new Color(1f, 0.15f, 0.1f, 0.6f);
         [Tooltip("How quickly (per second) the cone fades out and back in when the player takes or leaves a form this employee ignores.")]
         [SerializeField] float hideSpeed = 4f;
+        [Tooltip("Keep the cone drawn even while the player is in a form this watcher ignores. For cameras whose sweep the player has to time.")]
+        [SerializeField] bool alwaysShowCone;
 
         // 0 = unaware, 1 = spotted. Stays spotted until it decays all the way back to 0.
         public float Detection { get; private set; }
@@ -170,11 +174,11 @@ namespace ShapeShifty.AI
             if (targetShapeshifter == null) return MovementMultiplier();
             if (targetShapeshifter.IsShifting) return shiftingMultiplier;
             if (seesThroughDisguises) return MovementMultiplier();
-            return MovementMultiplier() * targetShapeshifter.Current.suspicion;
+            return MovementMultiplier() * targetShapeshifter.Suspicion;
         }
 
         bool TargetIgnored() =>
-            !seesThroughDisguises && targetShapeshifter != null && !targetShapeshifter.IsShifting && targetShapeshifter.Current.suspicion <= 0f;
+            !seesThroughDisguises && targetShapeshifter != null && !targetShapeshifter.IsShifting && targetShapeshifter.Suspicion <= 0f;
 
         // Moving targets are easier to notice: slow when still, fast when sprinting.
         float MovementMultiplier()
@@ -192,6 +196,9 @@ namespace ShapeShifty.AI
             Vector3 eye = transform.position + Vector3.up * eyeHeight;
             // The middle of the player's collider, so small forms hide behind low cover.
             Vector3 point = targetController != null ? target.TransformPoint(targetController.center) : target.position + Vector3.up * targetHeight;
+            // Nobody can see under water: a player who's gone right under is hidden.
+            Vector3 top = targetController != null ? target.position + Vector3.up * targetController.height : point;
+            if (DeepWater.At(top) != null) return false;
             Vector3 toTarget = point - eye;
             Vector3 flat = Vector3.ProjectOnPlane(toTarget, Vector3.up);
             if (flat.magnitude > range) return false;
@@ -208,7 +215,7 @@ namespace ShapeShifty.AI
 
         void DrawCone()
         {
-            coneVisibility = Mathf.MoveTowards(coneVisibility, TargetIgnored() ? 0f : 1f, hideSpeed * Time.deltaTime);
+            coneVisibility = Mathf.MoveTowards(coneVisibility, TargetIgnored() && !alwaysShowCone ? 0f : 1f, hideSpeed * Time.deltaTime);
             coneRenderer.enabled = coneVisibility > 0f;
             if (!coneRenderer.enabled) return;
 

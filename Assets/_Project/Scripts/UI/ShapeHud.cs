@@ -13,12 +13,14 @@ namespace ShapeShifty.UI
     // things like levers), and the bar of known forms along the bottom of the screen. The bar
     // stays hidden until there's more than one form, and dims after a few seconds untouched.
     // While shapeshifting is cooling down, the bar stays lit and its hint counts down.
+    // A breath meter appears at the top while the player is holding their breath under water.
     public class ShapeHud : MonoBehaviour
     {
         [SerializeField] PlayerScanner scanner;
         [SerializeField] PlayerShapeshifter shapeshifter;
         [SerializeField] PlayerTalker talker;
         [SerializeField] PlayerInteractor interactor;
+        [SerializeField] PlayerBreath breath;
         [Tooltip("Used to show the right keys in the prompts.")]
         [SerializeField] InputActionAsset inputActions;
 
@@ -36,6 +38,14 @@ namespace ShapeShifty.UI
         [SerializeField] TMP_Text barHint;
         [SerializeField] float barShowTime = 3f;
         [SerializeField, Range(0f, 1f)] float barIdleAlpha = 0.4f;
+
+        [Header("Breath")]
+        [SerializeField] CanvasGroup breathMeter;
+        [SerializeField] Image breathFill;
+        [SerializeField] Color breathColor = new Color(0.45f, 0.8f, 1f);
+        [SerializeField] Color lowBreathColor = new Color(1f, 0.32f, 0.25f);
+        [Tooltip("The fill turns to the low colour below this much breath.")]
+        [SerializeField, Range(0f, 1f)] float lowBreath = 0.35f;
 
         readonly List<ShapeSlot> slots = new List<ShapeSlot>();
         string scanKey, shiftKey, interactKey;
@@ -55,6 +65,7 @@ namespace ShapeShifty.UI
             barHint.text = idleHint;
             slotTemplate.gameObject.SetActive(false);
             bar.alpha = 0f;
+            breathMeter.alpha = 0f;
         }
 
         void OnEnable()
@@ -101,6 +112,10 @@ namespace ShapeShifty.UI
                 : Time.unscaledTime < barShownUntil || shapeshifter.IsShifting || cooldown > 0f ? 1f
                 : barIdleAlpha;
             bar.alpha = Mathf.MoveTowards(bar.alpha, alpha, Time.unscaledDeltaTime * 4f);
+
+            breathFill.fillAmount = breath.Breath;
+            breathFill.color = breath.Breath < lowBreath ? lowBreathColor : breathColor;
+            breathMeter.alpha = Mathf.MoveTowards(breathMeter.alpha, breath.Breath < 1f ? 1f : 0f, Time.unscaledDeltaTime * 4f);
         }
 
         // Only touches the text when the tenths change.
