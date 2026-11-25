@@ -14,6 +14,9 @@ namespace ShapeShifty.Player
             if (player.TryGetComponent(out PlayerShapeshifter shapeshifter)) shapeshifter.enabled = enabled;
             if (player.TryGetComponent(out PlayerTalker talker)) talker.enabled = enabled;
             if (player.TryGetComponent(out PlayerInteractor interactor)) interactor.enabled = enabled;
+            if (player.TryGetComponent(out PlayerHowl howl)) howl.enabled = enabled;
+            if (player.TryGetComponent(out PlayerCarry carry)) carry.enabled = enabled;
+            if (player.TryGetComponent(out PlayerThrower thrower)) thrower.enabled = enabled;
         }
     }
 }

@@ -56,5 +56,13 @@ namespace ShapeShifty.Shapes
         public float slideSpeed = 7f;
         [Tooltip("Collider height while sliding. No less than twice the radius.")]
         public float slideHeight = 0.45f;
+
+        [Header("Howling")]
+        [Tooltip("Can howl, by holding Howl or howling into the microphone (see PlayerHowl). Wolves in earshot stop and answer.")]
+        public bool canHowl;
+
+        [Header("Throwing")]
+        [Tooltip("Can fling poo with Attack (see PlayerThrower). The body turns with the camera, like in a shooter.")]
+        public bool canThrow;
     }
 }

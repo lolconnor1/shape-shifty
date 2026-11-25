@@ -1,0 +1,40 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ed6278055cdb5e842a597a9f83d025ef, type: 3}
+  m_Name: Level04_Sergeant
+  m_EditorClassIdentifier: 
+  lines:
+  - byPlayer: 0
+    text: Recruit! About time. You're a scrawny one, but you'll do.
+  - byPlayer: 1
+    text: I'm just trying to get to the golden goose exhibit.
+  - byPlayer: 0
+    text: Through THAT? That's Guerilla country. Ever since the Guerillas crowned
+      themselves a king, it's been war in this jungle. Poo everywhere. Nobody's safe.
+  - byPlayer: 0
+    text: Right. Basic training. Aim with the middle of the screen and click to fling.
+      A monkey's got to throw.
+  - byPlayer: 0
+    text: Keep moving! When you see a Guerilla's arm go back, change direction. They
+      aim where you're going, not where you are.
+  - byPlayer: 0
+    text: Run dry? Grab more from a poo pile. Hurt? Eat a banana. Each one's good
+      for a couple of splats.
+  - byPlayer: 0
+    text: 'The King sits on his throne in front of the Golden Goose gate. Watch for
+      the big ones he lobs: get out of the red circle. Knock him off that throne
+      and the gate''s yours.'
+  - byPlayer: 0
+    text: Mind, the gate only opens for monkeys, and once you're through you stay
+      a monkey till this war's won. No turning tail as a rat.
+  - byPlayer: 0
+    text: One for the Browns!

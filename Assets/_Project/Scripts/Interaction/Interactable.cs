@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using ShapeShifty.Audio;
 using ShapeShifty.Shapes;
 using UnityEngine;
 using UnityEngine.Events;
@@ -37,6 +38,7 @@ namespace ShapeShifty.Interaction
         // Called by the player.
         public void Interact()
         {
+            Sfx.Play(Sound.Interact, transform.position);
             Interacted?.Invoke();
             onInteract.Invoke();
         }

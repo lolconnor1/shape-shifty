@@ -1,4 +1,5 @@
 using System;
+using ShapeShifty.Audio;
 using ShapeShifty.Shapes;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -73,6 +74,7 @@ namespace ShapeShifty.Player
                 Progress = 0f;
                 UnlockedShapes.Unlock(shape);
                 Scanned?.Invoke(shape);
+                Sfx.Play(Sound.Scanned);
             }
         }
 

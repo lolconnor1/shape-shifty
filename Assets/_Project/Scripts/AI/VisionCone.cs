@@ -1,5 +1,6 @@
 using ShapeShifty.Interaction;
 using ShapeShifty.Player;
+using ShapeShifty.Shapes;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -15,6 +16,8 @@ namespace ShapeShifty.AI
     // alarmed as detection rises, and fades out with distance as detection weakens. It
     // disappears while the player is in a form this employee ignores, and comes back as
     // soon as they start changing out of it. Disabling it stops it watching and hides the cone.
+    // An animal's cone can ignore its own kind outright (Own Kind) while seeing through every
+    // other disguise, and can leave what happens on spotting to its own script.
     public class VisionCone : MonoBehaviour
     {
         [Header("Sight")]
@@ -41,6 +44,10 @@ namespace ShapeShifty.AI
         [SerializeField] float shiftingMultiplier = 4f;
         [Tooltip("Treat every form as fully suspicious, even ones employees ignore. For security cameras, which see rats too.")]
         [SerializeField] bool seesThroughDisguises;
+        [Tooltip("A form this watcher takes for one of its own kind and ignores completely, even with Sees Through Disguises on. For animals that go for anything that isn't one of them.")]
+        [SerializeField] ShapeDefinition ownKind;
+        [Tooltip("Spotting the player ends the level (see CaughtScreen). Off for watchers that react some other way, like a wolf that charges.")]
+        [SerializeField] bool catchesOnSpotted = true;
         [Tooltip("Detection lost per second while the player is out of sight or not suspicious.")]
         [SerializeField] float decayRate = 0.35f;
         public UnityEvent onSpotted;
@@ -61,6 +68,7 @@ namespace ShapeShifty.AI
         public bool IsSpotted { get; private set; }
         public bool CanSeeTarget { get; private set; }
         public Vector3 LastSeenPosition { get; private set; }
+        public bool CatchesOnSpotted => catchesOnSpotted;
 
         static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
         static readonly int BaseMapId = Shader.PropertyToID("_BaseMap");
@@ -173,12 +181,14 @@ namespace ShapeShifty.AI
         {
             if (targetShapeshifter == null) return MovementMultiplier();
             if (targetShapeshifter.IsShifting) return shiftingMultiplier;
+            if (ownKind != null && targetShapeshifter.Current == ownKind) return 0f;
             if (seesThroughDisguises) return MovementMultiplier();
             return MovementMultiplier() * targetShapeshifter.Suspicion;
         }
 
         bool TargetIgnored() =>
-            !seesThroughDisguises && targetShapeshifter != null && !targetShapeshifter.IsShifting && targetShapeshifter.Suspicion <= 0f;
+            targetShapeshifter != null && !targetShapeshifter.IsShifting
+            && ((ownKind != null && targetShapeshifter.Current == ownKind) || (!seesThroughDisguises && targetShapeshifter.Suspicion <= 0f));
 
         // Moving targets are easier to notice: slow when still, fast when sprinting.
         float MovementMultiplier()

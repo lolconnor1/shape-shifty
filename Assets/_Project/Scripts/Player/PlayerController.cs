@@ -1,3 +1,4 @@
+using ShapeShifty.Audio;
 using ShapeShifty.Interaction;
 using ShapeShifty.Shapes;
 using UnityEngine;
@@ -52,6 +53,16 @@ namespace ShapeShifty.Player
         [Tooltip("Layers that stop a sliding player standing back up. Ignore Raycast (the invisible level bounds) is left out.")]
         [SerializeField] LayerMask obstacleMask = ~(1 << 2);
 
+        [Header("Sounds")]
+        [Tooltip("Off for now: one thump for every form sounded wrong. Better driven by animation events once forms are animated.")]
+        [SerializeField] bool footsteps = false;
+        [Tooltip("Footsteps per second at walking speed, for a human-sized form. Smaller forms step up to 1.5x quicker.")]
+        [SerializeField] float walkStepRate = 1.8f;
+        [Tooltip("Footsteps per second at full sprint, for a human-sized form.")]
+        [SerializeField] float runStepRate = 2.8f;
+        [Tooltip("Falling faster than this (m/s) thuds on landing.")]
+        [SerializeField] float landSpeed = 6f;
+
         [Header("References")]
         [Tooltip("The camera target rotated by PlayerLook; movement is relative to its yaw.")]
         [SerializeField] Transform cameraTarget;
@@ -63,6 +74,14 @@ namespace ShapeShifty.Player
         // Set while the player is stunned: move and jump input are ignored, but gravity still
         // applies and the camera can still look round.
         public bool Frozen { get; set; }
+        // Set while the player is howling: they stay put and can't jump, but keep their pose
+        // and can still look round.
+        public bool Rooted { get; set; }
+        // Degrees the body tips back, e.g. to howl at the moon.
+        public float HeadBack { get; set; }
+        // Set while the player can throw (PlayerThrower): the body faces where the camera
+        // looks and walks sideways and backwards, like in a shooter.
+        public bool FacesCamera { get; set; }
         public bool IsSwimming { get; private set; }
         public bool IsSliding { get; private set; }
         // Speed and direction along the ground. Penguin pins check it to see if a slide was fast enough.
@@ -79,7 +98,8 @@ namespace ShapeShifty.Player
         float leapEndsAt;
         Collider groundHit, lastGround;
         Vector3 groundNormal = Vector3.up, hitNormal;
-        bool onIce;
+        bool onIce, wasGrounded, wasInWater;
+        float stepPhase;
         readonly Collider[] overlaps = new Collider[8];
 
         void Awake()
@@ -118,7 +138,7 @@ namespace ShapeShifty.Player
 
         void Update()
         {
-            Vector2 input = Frozen ? Vector2.zero : moveAction.ReadValue<Vector2>();
+            Vector2 input = Frozen || Rooted ? Vector2.zero : moveAction.ReadValue<Vector2>();
 
             // Swimmers are in the water while their lower body is under the surface, except
             // just after leaping out.
@@ -135,6 +155,7 @@ namespace ShapeShifty.Player
             groundHit = null;
             hitNormal = Vector3.up;
             controller.Move((horizontalVelocity + Vector3.up * verticalVelocity) * Time.deltaTime);
+            float fallSpeed = -verticalVelocity;
             Ground = controller.isGrounded ? groundHit : null;
             groundNormal = Ground != null ? hitNormal : Vector3.up;
             if (Ground != lastGround)
@@ -151,16 +172,61 @@ namespace ShapeShifty.Player
             }
 
             UpdatePose();
+            PlaySounds(fallSpeed);
         }
+
+        void Jump(float height)
+        {
+            verticalVelocity = JumpSpeed(height);
+            Sfx.Play(Sound.Jump, transform.position, FormVolume(), FormPitch());
+        }
+
+        // Footsteps while walking, a thud on landing from a height, a splash on hitting water.
+        void PlaySounds(float fallSpeed)
+        {
+            bool grounded = controller.isGrounded;
+            if (grounded && !wasGrounded && fallSpeed > landSpeed)
+                Sfx.Play(Sound.Land, transform.position, FormVolume(), FormPitch());
+            wasGrounded = grounded;
+
+            Vector3 moved = controller.velocity;
+            moved.y = 0f;
+            float speed = moved.magnitude;
+            if (footsteps && grounded && !IsSliding && !IsSwimming && speed > 0.5f)
+            {
+                // Steps quicken a little from a walk to a sprint, like a walk cycle speeding
+                // up, rather than one per fixed distance (which patters at sprint speeds).
+                float rate = speed < moveSpeed
+                    ? walkStepRate * Mathf.Max(0.5f, speed / moveSpeed)
+                    : Mathf.Lerp(walkStepRate, runStepRate, Mathf.InverseLerp(moveSpeed, sprintSpeed, speed));
+                rate *= Mathf.Clamp(Mathf.Sqrt(1.8f / (form != null ? form.height : 1.8f)), 1f, 1.5f);
+                stepPhase += rate * Time.deltaTime;
+                if (stepPhase >= 1f)
+                {
+                    stepPhase -= 1f;
+                    Sfx.Play(Sound.Footstep, transform.position, FormVolume(), FormPitch());
+                }
+            }
+            else stepPhase = 0.6f; // the first step comes soon after setting off
+
+            bool inWater = DeepWater.At(transform.position + Vector3.up * (controller.height * 0.25f)) != null;
+            if (inWater && !wasInWater) Sfx.Play(Sound.Splash, transform.position, FormVolume());
+            wasInWater = inWater;
+        }
+
+        // Small forms patter, big ones thump.
+        float FormVolume() => Mathf.Clamp(form != null ? form.height * 0.5f : 0.8f, 0.35f, 1f);
+        float FormPitch() => Mathf.Clamp(1.5f - (form != null ? form.height : 1.7f) * 0.3f, 0.85f, 1.4f);
 
         void Walk(Vector2 input)
         {
             float speed = sprintAction.IsPressed() ? sprintSpeed : moveSpeed;
             Vector3 targetVelocity = Vector3.zero;
+            if (FacesCamera) bodyYaw = Mathf.SmoothDampAngle(bodyYaw, cameraTarget.eulerAngles.y, ref turnVelocity, turnSmoothTime * 0.5f);
             if (input.sqrMagnitude > 0.01f)
             {
                 float targetYaw = InputYaw(input);
-                bodyYaw = Mathf.SmoothDampAngle(bodyYaw, targetYaw, ref turnVelocity, turnSmoothTime);
+                if (!FacesCamera) bodyYaw = Mathf.SmoothDampAngle(bodyYaw, targetYaw, ref turnVelocity, turnSmoothTime);
                 targetVelocity = Quaternion.Euler(0f, targetYaw, 0f) * Vector3.forward * (Mathf.Clamp01(input.magnitude) * speed);
             }
             horizontalVelocity = Vector3.MoveTowards(horizontalVelocity, targetVelocity, acceleration * Time.deltaTime);
@@ -168,8 +234,8 @@ namespace ShapeShifty.Player
             if (controller.isGrounded)
             {
                 if (verticalVelocity < 0f) verticalVelocity = -2f; // keep snapped to slopes
-                if (!Frozen && jumpAction.WasPressedThisFrame()) verticalVelocity = JumpSpeed(jumpHeight);
-                else if (!Frozen && form != null && form.canBellySlide && crouchAction.WasPressedThisFrame()) StartSlide();
+                if (!Frozen && !Rooted && jumpAction.WasPressedThisFrame()) Jump(jumpHeight);
+                else if (!Frozen && !Rooted && form != null && form.canBellySlide && crouchAction.WasPressedThisFrame()) StartSlide();
             }
             verticalVelocity += gravity * Time.deltaTime;
         }
@@ -181,6 +247,7 @@ namespace ShapeShifty.Player
             Vector3 facing = Quaternion.Euler(0f, bodyYaw, 0f) * Vector3.forward;
             horizontalVelocity = facing * Mathf.Max(Vector3.Dot(horizontalVelocity, facing), form.slideSpeed * 0.6f);
             SetHeight(form.slideHeight);
+            Sfx.Play(Sound.Land, transform.position, 0.7f, 1.3f);
         }
 
         void Slide(Vector2 input)
@@ -212,7 +279,7 @@ namespace ShapeShifty.Player
 
             bool jump = !Frozen && controller.isGrounded && jumpAction.WasPressedThisFrame();
             if ((jump || Frozen || !crouchAction.IsPressed() || speed < slideStopSpeed) && GetUp(false) && jump)
-                verticalVelocity = JumpSpeed(jumpHeight);
+                Jump(jumpHeight);
         }
 
         // Stands back up from a slide, if there's room. Forced, it stands up regardless.
@@ -242,7 +309,7 @@ namespace ShapeShifty.Player
             float belowFloat = floatY - transform.position.y;
             if (!Frozen && belowFloat < 0.1f && jumpAction.WasPressedThisFrame())
             {
-                verticalVelocity = JumpSpeed(form.leapHeight);
+                Jump(form.leapHeight);
                 leapEndsAt = Time.time + 0.5f;
                 return;
             }
@@ -259,7 +326,7 @@ namespace ShapeShifty.Player
         void UpdatePose()
         {
             if (Frozen) return; // PlayerStun shakes the body meanwhile
-            float targetTilt = 0f;
+            float targetTilt = -HeadBack;
             if (IsSliding) targetTilt = 85f;
             else if (IsSwimming) targetTilt = 80f - Mathf.Clamp(verticalVelocity / form.swimSpeed, -1f, 1f) * 50f;
             tilt = Mathf.SmoothDamp(tilt, targetTilt, ref tiltVelocity, poseTime);

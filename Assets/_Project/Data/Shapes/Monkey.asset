@@ -1,0 +1,39 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 09e3ee76b7c4dfb4099331f6fd1ab3ce, type: 3}
+  m_Name: Monkey
+  m_EditorClassIdentifier: 
+  displayName: Monkey
+  icon: {fileID: 0}
+  model: {fileID: 9130359704372308552, guid: cd6393e71a7066d48875f9e9d885ee43, type: 3}
+  scanOrigin: {x: 0.25, y: 0.85, z: 0.2}
+  height: 1.1
+  radius: 0.32
+  stepOffset: 0.35
+  skinWidth: 0.05
+  moveSpeed: 5.5
+  sprintSpeed: 8
+  jumpHeight: 1.7
+  cameraHeight: 1.15
+  cameraDistance: 3.2
+  shoulderOffset: {x: 0.85, y: 0.25, z: 0}
+  verticalArmLength: 0.3
+  suspicion: 1
+  canSwim: 0
+  swimSpeed: 6
+  leapHeight: 1.4
+  breathTime: 4
+  canBellySlide: 0
+  slideSpeed: 7
+  slideHeight: 0.45
+  canHowl: 0
+  canThrow: 1

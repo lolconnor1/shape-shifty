@@ -1,4 +1,5 @@
 using System;
+using ShapeShifty.Audio;
 using ShapeShifty.Dialogue;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -50,7 +51,10 @@ namespace ShapeShifty.Player
                     End();
                     return;
                 }
+                float before = typed;
                 typed = Mathf.Min(typed + typingSpeed * Time.deltaTime, CurrentLine.text.Length);
+                // A blip every few letters as the line types out.
+                if (Mathf.FloorToInt(typed / 3f) > Mathf.FloorToInt(before / 3f)) Sfx.Play(Sound.Talk, 0.6f);
                 if (interactAction.WasPressedThisFrame()) Advance();
                 return;
             }

@@ -1,3 +1,4 @@
+using ShapeShifty.Audio;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -37,14 +38,26 @@ namespace ShapeShifty.Interaction
             Apply();
         }
 
-        void OnEnable() => interactable.Interacted += Toggle;
-        void OnDisable() => interactable.Interacted -= Toggle;
+        void OnEnable() => interactable.Interacted += Pulled;
+        void OnDisable() => interactable.Interacted -= Pulled;
+
+        void Pulled()
+        {
+            Sfx.Play(Sound.Lever, transform.position);
+            Toggle();
+        }
 
         public void Toggle()
         {
             isOn = !isOn;
             if (isOn && !canSwitchBack) interactable.enabled = false;
             (isOn ? onSwitchedOn : onSwitchedOff).Invoke();
+        }
+
+        // Pulled already, e.g. when a restart puts back a puzzle that was solved.
+        public void SetOn()
+        {
+            if (!isOn) Toggle();
         }
 
         void Update()
