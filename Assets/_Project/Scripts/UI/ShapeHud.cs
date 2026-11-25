@@ -74,6 +74,7 @@ namespace ShapeShifty.UI
             shapeshifter.Changed += RefreshBar;
             shapeshifter.ShiftBlocked += OnShiftBlocked;
             shapeshifter.ShiftTooSoon += OnShiftTooSoon;
+            shapeshifter.ShiftLocked += OnShiftLocked;
         }
 
         void OnDisable()
@@ -82,6 +83,7 @@ namespace ShapeShifty.UI
             shapeshifter.Changed -= RefreshBar;
             shapeshifter.ShiftBlocked -= OnShiftBlocked;
             shapeshifter.ShiftTooSoon -= OnShiftTooSoon;
+            shapeshifter.ShiftLocked -= OnShiftLocked;
         }
 
         void Start() => RefreshBar();
@@ -108,7 +110,7 @@ namespace ShapeShifty.UI
 
             float cooldown = shapeshifter.CooldownLeft;
             ShowCooldown(cooldown);
-            float alpha = shapeshifter.Available.Count < 2 ? 0f
+            float alpha = shapeshifter.Available.Count < 2 || shapeshifter.Locked ? 0f
                 : Time.unscaledTime < barShownUntil || shapeshifter.IsShifting || cooldown > 0f ? 1f
                 : barIdleAlpha;
             bar.alpha = Mathf.MoveTowards(bar.alpha, alpha, Time.unscaledDeltaTime * 4f);
@@ -133,7 +135,10 @@ namespace ShapeShifty.UI
 
         void OnShiftTooSoon() => ShowMessage("Too soon to change again");
 
-        void ShowMessage(string text)
+        void OnShiftLocked() => ShowMessage($"No changing back here: you're a {shapeshifter.Current.displayName.ToLower()} now");
+
+        // Shown under the aiming dot for a few seconds, e.g. by a level's puzzles.
+        public void ShowMessage(string text)
         {
             message = text;
             messageUntil = Time.unscaledTime + messageTime;

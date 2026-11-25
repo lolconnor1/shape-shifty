@@ -1,3 +1,4 @@
+using ShapeShifty.Audio;
 using UnityEngine;
 
 namespace ShapeShifty.Levels
@@ -23,6 +24,7 @@ namespace ShapeShifty.Levels
         {
             if (IsOpen) return;
             IsOpen = true;
+            Sfx.Play(Sound.Solved);
             drain.ShutterOpened(this);
         }
 

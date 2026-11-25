@@ -1,9 +1,10 @@
+using ShapeShifty.Audio;
 using UnityEngine;
 
 namespace ShapeShifty.Interaction
 {
     // A cover, gate or door that slides between closed and open, e.g. when a lever is pulled.
-    // Hook Open and Close up to a lever's events.
+    // Hook Open and Close up to a lever's events. Grinds while it moves and clanks shut.
     public class Hatch : MonoBehaviour
     {
         [Tooltip("The part that moves. Its position in the scene is the closed position.")]
@@ -32,8 +33,10 @@ namespace ShapeShifty.Interaction
         {
             float target = isOpen ? 1f : 0f;
             if (openAmount == target) return;
+            if (openAmount == 1f - target) Sfx.Play(Sound.HatchMove, cover.position);
             openAmount = Mathf.MoveTowards(openAmount, target, Time.deltaTime / moveTime);
             Apply();
+            if (openAmount == 0f) Sfx.Play(Sound.HatchShut, cover.position);
         }
 
         void Apply() => cover.localPosition = closedPosition + openOffset * Mathf.SmoothStep(0f, 1f, openAmount);

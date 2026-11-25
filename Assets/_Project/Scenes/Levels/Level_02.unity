@@ -29340,6 +29340,8 @@ MonoBehaviour:
   fastSpeed: 8
   shiftingMultiplier: 4
   seesThroughDisguises: 0
+  ownKind: {fileID: 0}
+  catchesOnSpotted: 1
   decayRate: 0.35
   onSpotted:
     m_PersistentCalls:
@@ -32224,7 +32226,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4945469018295164159, guid: 08fdad8ff421f4a418e95fcd985be404, type: 3}
       propertyPath: nextScene
-      value: 
+      value: Level_03
       objectReference: {fileID: 0}
     - target: {fileID: 4945469018295164159, guid: 08fdad8ff421f4a418e95fcd985be404, type: 3}
       propertyPath: screenFade

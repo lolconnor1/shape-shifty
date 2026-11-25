@@ -1,4 +1,5 @@
 using System.Collections;
+using ShapeShifty.Audio;
 using ShapeShifty.Player;
 using UnityEngine;
 using UnityEngine.Events;
@@ -27,6 +28,7 @@ namespace ShapeShifty.Levels
             reached = true;
             Debug.Log("Player reached the level exit.", this);
             onReached.Invoke();
+            Sfx.Play(Sound.LevelDone);
             if (!string.IsNullOrEmpty(nextScene)) StartCoroutine(GoToNextScene(other.gameObject));
         }
 

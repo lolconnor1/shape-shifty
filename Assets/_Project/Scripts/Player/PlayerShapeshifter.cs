@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using ShapeShifty.Audio;
 using ShapeShifty.Shapes;
 using Unity.Cinemachine;
 using UnityEngine;
@@ -46,8 +47,12 @@ namespace ShapeShifty.Player
         public int SelectedIndex { get; private set; }
         public IReadOnlyList<ShapeDefinition> Available => available;
         public bool IsShifting { get; private set; }
+        // The turning body the form models sit under: anything riding on the player goes here.
+        public Transform Visual => visual;
         // Seconds until the player can change again; 0 when ready.
         public float CooldownLeft => Mathf.Max(0f, readyAt - Time.time);
+        // Kept in the current form: no choosing or changing (see FormLock).
+        public bool Locked { get; set; }
 
         // Selection, the list of forms, or the current form changed.
         public event Action Changed;
@@ -55,6 +60,10 @@ namespace ShapeShifty.Player
         public event Action<ShapeDefinition> ShiftBlocked;
         // Shift was pressed before the cooldown from the last change ran out.
         public event Action ShiftTooSoon;
+        // Tried to choose or change form while Locked.
+        public event Action ShiftLocked;
+
+        const string MaskName = "BurglarMask";
 
         readonly List<ShapeDefinition> available = new List<ShapeDefinition>();
         readonly Dictionary<ShapeDefinition, GameObject> models = new Dictionary<ShapeDefinition, GameObject>();
@@ -76,6 +85,7 @@ namespace ShapeShifty.Player
             shiftAction = map.FindAction("Shift", true);
 
             models[baseShape] = baseModel;
+            ShowMask(baseModel);
             currentModel = baseModel;
             Current = baseShape;
             RebuildAvailable();
@@ -95,13 +105,22 @@ namespace ShapeShifty.Player
 
         void Update()
         {
-            if (previousAction.WasPressedThisFrame()) Select(SelectedIndex - 1);
-            if (nextAction.WasPressedThisFrame()) Select(SelectedIndex + 1);
+            if (Locked)
+            {
+                if (previousAction.WasPressedThisFrame() || nextAction.WasPressedThisFrame() || shiftAction.WasPressedThisFrame())
+                {
+                    ShiftLocked?.Invoke();
+                    Sfx.Play(Sound.Denied);
+                }
+                return;
+            }
+            if (previousAction.WasPressedThisFrame()) { Select(SelectedIndex - 1); Sfx.Play(Sound.UiClick); }
+            if (nextAction.WasPressedThisFrame()) { Select(SelectedIndex + 1); Sfx.Play(Sound.UiClick); }
             if (shiftAction.WasPressedThisFrame() && !IsShifting && Selected != Current)
             {
-                if (CooldownLeft > 0f) ShiftTooSoon?.Invoke();
+                if (CooldownLeft > 0f) { ShiftTooSoon?.Invoke(); Sfx.Play(Sound.Denied); }
                 else if (HasRoomFor(Selected)) StartCoroutine(Shift(Selected));
-                else ShiftBlocked?.Invoke(Selected);
+                else { ShiftBlocked?.Invoke(Selected); Sfx.Play(Sound.Denied); }
             }
         }
 
@@ -145,6 +164,7 @@ namespace ShapeShifty.Player
             Changed?.Invoke();
             puff.transform.localPosition = Vector3.up * (Mathf.Max(Current.height, shape.height) * 0.5f);
             puff.Play();
+            Sfx.Play(Sound.Shift, transform.position);
 
             float half = shiftDuration * 0.5f;
             yield return ScaleVisual(1f, 0f, half);
@@ -179,9 +199,18 @@ namespace ShapeShifty.Player
             {
                 model = Instantiate(shape.model, visual);
                 model.name = shape.model.name;
+                ShowMask(model);
                 models[shape] = model;
             }
             return model;
+        }
+
+        // Every form the player takes wears the burglar's eye mask, so they stand out from
+        // the real animals. The models share it with NPCs, so they keep it switched off.
+        static void ShowMask(GameObject model)
+        {
+            foreach (var t in model.GetComponentsInChildren<Transform>(true))
+                if (t.name == MaskName) t.gameObject.SetActive(true);
         }
 
         void ApplyForm(ShapeDefinition shape)

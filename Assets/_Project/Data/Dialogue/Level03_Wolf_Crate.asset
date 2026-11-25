@@ -1,0 +1,34 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ed6278055cdb5e842a597a9f83d025ef, type: 3}
+  m_Name: Level03_Wolf_Crate
+  m_EditorClassIdentifier: 
+  lines:
+  - byPlayer: 0
+    text: Zzz... hm? ...sniff... You're not a wolf.
+  - byPlayer: 1
+    text: Shh. Working on it.
+  - byPlayer: 0
+    text: Doesn't matter what you look like, pup. The pack can't see a wolf. But
+      they can SMELL one that isn't. Get close and they'll come for you.
+  - byPlayer: 0
+    text: When they come, howl. Really howl, from the chest. Every wolf that hears
+      it has to answer. It's the law. They'll stand and sing as long as you do, and
+      a while after.
+  - byPlayer: 0
+    text: Don't overdo it, mind. A pack gets bored of the same song.
+  - byPlayer: 0
+    text: And if you find a bone... throw it. Nobody can resist a bone. Not even
+      me.
+  - byPlayer: 0
+    text: The way out's the culvert at the far end. There's a grate across it. Rat-sized
+      problem, that. Zzz...

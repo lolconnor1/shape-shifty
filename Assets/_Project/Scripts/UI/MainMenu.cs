@@ -1,5 +1,6 @@
 using System.IO;
 using System.Text.RegularExpressions;
+using ShapeShifty.Audio;
 using ShapeShifty.Shapes;
 using TMPro;
 using UnityEngine;
@@ -34,7 +35,11 @@ namespace ShapeShifty.UI
                 var button = Instantiate(buttonTemplate, buttonTemplate.transform.parent);
                 button.name = scene + "Button";
                 button.GetComponentInChildren<TMP_Text>().text = Nicify(scene);
-                button.onClick.AddListener(() => SceneManager.LoadScene(scene));
+                button.onClick.AddListener(() =>
+                {
+                    Sfx.Play(Sound.UiClick);
+                    SceneManager.LoadScene(scene);
+                });
                 button.gameObject.SetActive(true);
                 if (first == null) first = button;
             }
