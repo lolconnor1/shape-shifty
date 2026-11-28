@@ -6,7 +6,8 @@ namespace ShapeShifty.Player
 {
     // Howling, for forms that can (see ShapeDefinition.canHowl). Holding Howl, or howling
     // into the microphone (see MicrophoneLevel), for a moment starts a howl: the player
-    // stands still with their head thrown back for as long as they keep it up, and every
+    // stands still with their head thrown back for as long as they keep it up (pushing to
+    // move cuts a mic howl short, so a noisy room can't hold them there), and every
     // Wolf in earshot answers. A ring spreads out along the ground to show how far it
     // carries. Microphone (M) switches the mic on, or tries again after a refusal.
     [RequireComponent(typeof(PlayerController), typeof(PlayerShapeshifter))]
@@ -23,7 +24,7 @@ namespace ShapeShifty.Player
         [Tooltip("Seconds of quiet before a howl is over, so a breath mid-howl doesn't end it.")]
         [SerializeField] float stopTime = 0.4f;
         [Tooltip("Longest one howl can go on (s).")]
-        [SerializeField] float maxTime = 6f;
+        [SerializeField] float maxTime = 4f;
         [Tooltip("How far (m) a howl carries. Wolves also have their own hearing range.")]
         [SerializeField] float range = 18f;
 
@@ -55,7 +56,9 @@ namespace ShapeShifty.Player
         Quaternion headRest;
         Renderer ringRenderer;
         float buildUp, quiet, ringPhase;
-        bool wasAble;
+        bool wasAble, wasMoving;
+        // Over, but the key's still down or the mic's still loud: needs a pause before another.
+        bool spent;
 
         void Awake()
         {
@@ -94,7 +97,17 @@ namespace ShapeShifty.Player
                 else microphone.Listen();
             }
 
-            bool wanting = CanHowl && (howlAction.IsPressed() || (microphone != null && microphone.IsLoud));
+            bool held = howlAction.IsPressed();
+            bool wanting = CanHowl && (held || (microphone != null && microphone.IsLoud));
+            bool moving = mover.WantsToMove;
+            bool pushedOff = moving && !wasMoving;
+            wasMoving = moving;
+            if (!IsHowling && spent)
+            {
+                quiet = wanting ? 0f : quiet + Time.deltaTime;
+                if (quiet < 0.2f) return;
+                spent = false;
+            }
             if (!IsHowling)
             {
                 buildUp = wanting ? buildUp + Time.deltaTime : 0f;
@@ -104,7 +117,13 @@ namespace ShapeShifty.Player
 
             HowlTime += Time.deltaTime;
             quiet = wanting ? 0f : quiet + Time.deltaTime;
-            if (quiet >= stopTime || HowlTime >= maxTime || !CanHowl) End();
+            bool cutShort = HowlTime >= maxTime || (pushedOff && !held);
+            if (quiet >= stopTime || cutShort || !CanHowl)
+            {
+                End();
+                spent = cutShort;
+                quiet = 0f;
+            }
             else UpdateRing();
         }
 

@@ -37,6 +37,10 @@ namespace ShapeShifty.Shapes
         [Header("Disguise")]
         [Tooltip("How quickly employees get suspicious of this form compared with a person. 0 = ignored completely. Ignored completely anyway inside a BlendInZone for this form.")]
         [Range(0f, 1f)] public float suspicion = 1f;
+        [Tooltip("An animal, not a person. Staff who spot it out of its enclosure (outside a BlendInZone for it) come over to grab it instead of catching the player on sight, so there's time to get out of view.")]
+        public bool isAnimal;
+        [Tooltip("Kilograms, for scales and counterweighted lifts (see CounterweightLift).")]
+        public float weight = 80f;
 
         [Header("Swimming")]
         [Tooltip("Swims in deep water (see DeepWater) instead of sinking to the bottom. Crouch dives, Jump swims up, and Jump at the surface leaps out.")]

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using ShapeShifty.UI;
 using UnityEngine;
 
 namespace ShapeShifty.AI
@@ -9,6 +10,9 @@ namespace ShapeShifty.AI
     // where they were last seen until detection drains away, then carries on.
     // Investigate() pulls them off their route to go and look at something, like a noise.
     // Stun() puts them out of action for a while, e.g. after an electric shock.
+    // An escaped animal they spot (see ShapeDefinition.isAnimal) isn't caught on sight: they
+    // shout and hurry after it, and only catch the player if they get close enough to grab
+    // it. Out of sight for long enough, they give up and go and look where it was last seen.
     [RequireComponent(typeof(VisionCone))]
     public class EmployeePatrol : MonoBehaviour
     {
@@ -31,6 +35,14 @@ namespace ShapeShifty.AI
         [SerializeField] float reactionTime = 1.5f;
         [Tooltip("How far the employee glances left and right while looking at something.")]
         [SerializeField] float investigateLookAngle = 25f;
+
+        [Header("Escaped Animals")]
+        [Tooltip("Speed (m/s) they hurry after an escaped animal at. Slower than most animals can run.")]
+        [SerializeField] float grabSpeed = 3.2f;
+        [Tooltip("How close (m) they have to get, still seeing it, to grab it.")]
+        [SerializeField] float grabRange = 1.3f;
+        [Tooltip("Seconds spent looking round where it was last seen, after losing it.")]
+        [SerializeField] float searchTime = 3f;
 
         [Header("Alert")]
         [Tooltip("The \"!\" and detection meter shown above the head while the employee is suspicious. Turned to face the camera.")]
@@ -75,8 +87,33 @@ namespace ShapeShifty.AI
         float stunElapsed;
         Vector3 visualRest;
 
+        bool chasing;
+        Transform player;
+
+        // A job somewhere else (see Errand): walk the path there, work, walk it back.
+        public class ErrandJob
+        {
+            public Vector3[] path;
+            public Vector3 facing;
+            public float speed = 2f;
+            public float workTime = 5f;
+            public System.Action arrived, done;
+        }
+        readonly Queue<ErrandJob> errands = new Queue<ErrandJob>();
+        ErrandJob errand;
+        int errandStep;
+        float errandTimer, errandDelay;
+        bool errandWorking, errandBack;
+
         public bool IsInvestigating => investigating;
         public bool IsStunned => stunTimer > 0f;
+        public bool IsChasing => chasing;
+        public bool IsOnErrand => errand != null || errands.Count > 0;
+        // Out working somewhere else, not walking there or back.
+        public bool IsAtWork => errand != null && errandWorking;
+
+        // Queued behind any errand already under way.
+        public void RunErrand(ErrandJob job) => errands.Enqueue(job);
 
         void Awake()
         {
@@ -88,10 +125,36 @@ namespace ShapeShifty.AI
             if (dazedIcon != null) dazedIcon.SetActive(false);
         }
 
-        void OnEnable() => All.Add(this);
-        void OnDisable() => All.Remove(this);
+        void OnEnable()
+        {
+            All.Add(this);
+            vision.SpottedAnimal += OnSpottedAnimal;
+        }
 
-        void Start() => viewCamera = Camera.main != null ? Camera.main.transform : null;
+        void OnDisable()
+        {
+            All.Remove(this);
+            vision.SpottedAnimal -= OnSpottedAnimal;
+        }
+
+        void Start()
+        {
+            viewCamera = Camera.main != null ? Camera.main.transform : null;
+            var found = GameObject.FindWithTag("Player");
+            if (found != null) player = found.transform;
+        }
+
+        void OnSpottedAnimal()
+        {
+            chasing = true;
+            investigating = false;
+            waiting = false;
+            FloatingWord.Spawn(transform.position + Vector3.up * 2.3f, Shouts[Random.Range(0, Shouts.Length)], new Color(1f, 0.55f, 0.3f), 3f);
+            var hud = FindFirstObjectByType<ShapeHud>();
+            if (hud != null) hud.ShowMessage("You've been seen out of your enclosure! Get out of sight", 3.5f);
+        }
+
+        static readonly string[] Shouts = { "OI!", "HEY!", "GET BACK HERE!", "WHO LET YOU OUT?" };
 
         // Out of action for a while: stops dead, stops watching, shakes through the shock and
         // then stands about dazed until the time's up, and carries on with the route.
@@ -102,6 +165,7 @@ namespace ShapeShifty.AI
             stunElapsed = 0f;
             investigating = false;
             waiting = false;
+            chasing = false;
             vision.enabled = false;
         }
 
@@ -125,13 +189,87 @@ namespace ShapeShifty.AI
                 Stunned();
                 return;
             }
-            if (vision.Detection > 0f)
+            if (chasing)
+                Chase();
+            else if (vision.Detection > 0f)
                 TurnTowards(vision.LastSeenPosition - transform.position);
             else if (investigating)
                 Investigating();
+            else if (IsOnErrand)
+                Errand();
             else if (waypoints.Length > 0)
                 Patrol();
             UpdateSitting();
+        }
+
+        void Errand()
+        {
+            if (errand == null)
+            {
+                errand = errands.Dequeue();
+                errandStep = 0;
+                errandTimer = 0f;
+                errandDelay = reactionTime;
+                errandWorking = errandBack = false;
+                waiting = false;
+            }
+            if (errandDelay > 0f)
+            {
+                errandDelay -= Time.deltaTime;
+                return;
+            }
+            var path = errand.path;
+            if (!errandBack)
+            {
+                if (errandStep < path.Length)
+                {
+                    if (WalkTo(path[errandStep], errand.speed)) errandStep++;
+                    return;
+                }
+                if (!errandWorking)
+                {
+                    errandWorking = true;
+                    errand.arrived?.Invoke();
+                }
+                errandTimer += Time.deltaTime;
+                float glance = Mathf.Sin(errandTimer * 1.3f) * investigateLookAngle;
+                TurnTowards(Quaternion.Euler(0f, glance, 0f) * errand.facing);
+                if (errandTimer < errand.workTime) return;
+                errandWorking = false;
+                errandBack = true;
+                errandStep = path.Length - 2;
+                errand.done?.Invoke();
+                return;
+            }
+            if (errandStep >= 0)
+            {
+                if (WalkTo(path[errandStep], errand.speed)) errandStep--;
+                return;
+            }
+            errand = null;
+        }
+
+        // After an escaped animal: heads for where it was last seen, and grabs it if it's
+        // still in view once in reach. Lost it: goes and has a look round there instead.
+        void Chase()
+        {
+            if (!vision.Grabbing)
+            {
+                chasing = false;
+                Vector3 facing = vision.LastSeenPosition - transform.position;
+                Investigate(vision.LastSeenPosition, facing.sqrMagnitude > 0.01f ? facing : transform.forward, searchTime);
+                reactionTimer = 0f;
+                return;
+            }
+            WalkTo(vision.LastSeenPosition, grabSpeed);
+            if (player == null || !vision.CanSeeTarget) return;
+            Vector3 toPlayer = player.position - transform.position;
+            toPlayer.y = 0f;
+            if (toPlayer.magnitude <= grabRange)
+            {
+                chasing = false;
+                vision.Catch();
+            }
         }
 
         void Investigating()
@@ -226,8 +364,10 @@ namespace ShapeShifty.AI
             }
         }
 
+        bool WalkTo(Vector3 destination) => WalkTo(destination, walkSpeed);
+
         // Steps towards destination; true once there.
-        bool WalkTo(Vector3 destination)
+        bool WalkTo(Vector3 destination, float speed)
         {
             Vector3 toPoint = destination - transform.position;
             toPoint.y = 0f;
@@ -238,7 +378,7 @@ namespace ShapeShifty.AI
             if (Vector3.Angle(transform.forward, toPoint) < 30f)
             {
                 Vector3 goal = new Vector3(destination.x, transform.position.y, destination.z);
-                transform.position = Vector3.MoveTowards(transform.position, goal, walkSpeed * Time.deltaTime);
+                transform.position = Vector3.MoveTowards(transform.position, goal, speed * Time.deltaTime);
             }
             return false;
         }

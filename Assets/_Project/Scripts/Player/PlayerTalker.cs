@@ -14,7 +14,7 @@ namespace ShapeShifty.Player
     {
         [SerializeField] InputActionAsset inputActions;
         [Tooltip("How close (m) an animal has to be to start talking.")]
-        [SerializeField] float range = 1.5f;
+        [SerializeField] float range = 2f;
         [Tooltip("Walking further than this (m) from the animal ends the conversation.")]
         [SerializeField] float leaveDistance = 3f;
         [Tooltip("Characters per second as a line types out.")]

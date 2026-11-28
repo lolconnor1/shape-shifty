@@ -15,8 +15,9 @@ namespace ShapeShifty.AI
     // A wolf-shaped player it can't see through, but can smell: inside its scent range a
     // sniff meter fills, and once full it stalks them, closing in to pounce.
     // A howl (PlayerHowl) in earshot stops it in its tracks: it throws its head back and
-    // howls along for as long as the player does and as long again after, up to a limit that
-    // shrinks each time it has heard a howl recently. The scent it had is kept, not forgotten.
+    // howls along for as long as the player does and a good while after, up to a limit that
+    // shrinks each time it has heard a howl recently. It forgets any scent it had, and takes
+    // a moment to start sniffing again.
     // A thrown Bone landing in range draws it over to gnaw, and it carries it home to lie
     // down with for a long while. A player carrying a bone smells of it from further away,
     // and a wolf that reaches them takes the bone instead of biting.
@@ -55,7 +56,7 @@ namespace ShapeShifty.AI
         [Tooltip("Once stalking, the scent only fades beyond this distance (m).")]
         [SerializeField] float loseRange = 16f;
         [Tooltip("Faster than the player can run: once it's on the scent, only a howl or a bone shakes it.")]
-        [SerializeField] float stalkSpeed = 9.5f;
+        [SerializeField] float stalkSpeed = 6.5f;
         [Tooltip("Close enough (m) to pounce.")]
         [SerializeField] float pounceRange = 2.5f;
         [SerializeField] float pounceTime = 0.4f;
@@ -64,22 +65,25 @@ namespace ShapeShifty.AI
 
         [Header("Sight")]
         [Tooltip("How fast it runs at something it has seen that isn't a wolf.")]
-        [SerializeField] float chargeSpeed = 10f;
+        [SerializeField] float chargeSpeed = 7.5f;
 
         [Header("Howling")]
         [Tooltip("How far (m) it can hear the player howl.")]
         [SerializeField] float hearingRange = 12f;
-        [Tooltip("Longest it answers a howl for (s): as long as the player howls and as long again after, up to this.")]
-        [SerializeField] float maxReply = 6f;
-        [SerializeField] float minReply = 1.5f;
+        [Tooltip("Longest it goes on howling after the player stops (s): twice as long as they howled, up to this.")]
+        [SerializeField] float maxReply = 8f;
+        [SerializeField] float minReply = 3.5f;
+        [Tooltip("Seconds after howling before it starts sniffing again.")]
+        [SerializeField] float noseRest = 2f;
         [Tooltip("Each howl heard within Boredom Time of the last cuts the longest reply to this fraction of itself.")]
-        [SerializeField, Range(0.1f, 1f)] float boredomFactor = 0.6f;
+        [SerializeField, Range(0.1f, 1f)] float boredomFactor = 0.8f;
         [Tooltip("Seconds without hearing a howl before it's interested again.")]
         [SerializeField] float boredomTime = 45f;
 
         [Header("Bones")]
         [Tooltip("How far (m) it notices a bone landing.")]
-        [SerializeField] float boneRange = 12f;
+        [SerializeField] float boneRange = 15f;
+        [SerializeField] float fetchSpeed = 8f;
         [SerializeField] float gnawTime = 6f;
         [Tooltip("How long (s) it lies at its den with a bone before it's finished with it.")]
         [SerializeField] float restTime = 60f;
@@ -129,11 +133,13 @@ namespace ShapeShifty.AI
         Vector3 homePosition, scentTrail;
         Quaternion homeRotation;
         float pauseTimer, phase;
-        float replyStart, replyCap, howlUntil, lastHeard = float.NegativeInfinity;
+        float replyCap, howlUntil, noseBack, lastHeard = float.NegativeInfinity;
         int boredom, lastHowlCount;
         Vector3 pounceFrom, pounceTo;
         float pounceTimer, timer;
-        Bone bone;
+        // The bone it's after or has, and one it couldn't get to.
+        Bone bone, uninteresting;
+        float nextLook, fetchBest, fetchStuck;
         Vector3 bodyRest;
         Quaternion headRest;
         float crouch, bodyPitch, headPitch;
@@ -193,6 +199,7 @@ namespace ShapeShifty.AI
 
             if (Time.time - lastHeard > boredomTime) boredom = 0;
             ListenForHowl();
+            LookForBones();
 
             switch (Current)
             {
@@ -222,6 +229,7 @@ namespace ShapeShifty.AI
         // drains out of it. Full means stalking; empty means giving up.
         void Smell()
         {
+            if (Time.time < noseBack) return;
             float range = carry != null && carry.HasBone ? boneScentRange : scentRange;
             float distance = PlayerDistance();
             if (distance < range)
@@ -257,8 +265,7 @@ namespace ShapeShifty.AI
             if (Time.time - lastHeard <= boredomTime) boredom++;
             lastHeard = Time.time;
             replyCap = Mathf.Max(minReply, maxReply * Mathf.Pow(boredomFactor, boredom));
-            replyStart = Time.time;
-            howlUntil = replyStart + replyCap;
+            howlUntil = Time.time + minReply;
             walking = false;
             bone = null;
             Current = State.Howling;
@@ -267,14 +274,27 @@ namespace ShapeShifty.AI
         void OnBoneLanded(Bone landed)
         {
             if (tame || Current == State.Done) return;
-            bool free = Current == State.Prowling || Current == State.Stalking || Current == State.Howling;
+            if (landed == uninteresting) return;
+            // Even mid-charge: nobody can resist a bone.
+            bool free = Current == State.Prowling || Current == State.Stalking || Current == State.Charging || Current == State.Howling;
             if (!free) return;
             Vector3 to = landed.transform.position - transform.position;
             to.y = 0f;
             if (to.magnitude > boneRange) return;
             bone = landed;
             walking = false;
+            fetchBest = float.PositiveInfinity;
+            fetchStuck = 0f;
             Current = State.Fetching;
+        }
+
+        // A thrown bone lying about unclaimed goes on tempting any wolf that comes near it or
+        // has nothing better to do, not just the ones about when it landed.
+        void LookForBones()
+        {
+            if (Time.time < nextLook || Current == State.Howling) return;
+            nextLook = Time.time + 0.3f;
+            foreach (var b in Bone.All) if (b.IsLure) OnBoneLanded(b);
         }
 
         // ---------- States ----------
@@ -374,13 +394,17 @@ namespace ShapeShifty.AI
         void HowlAlong()
         {
             vision.enabled = false;
-            // Keeps going as long as the player does, and as long again after, between the
-            // shortest and longest reply.
+            Scent = Mathf.MoveTowards(Scent, 0f, Time.deltaTime * 0.8f);
+            // Keeps going as long as the player does, and then for twice as long as they did,
+            // between the shortest and longest reply.
             if (howl != null && howl.IsHowling && howl.HowlCount == lastHowlCount)
-                howlUntil = Mathf.Clamp(Time.time + howl.HowlTime, replyStart + minReply, replyStart + replyCap);
+                howlUntil = Time.time + Mathf.Clamp(howl.HowlTime * 2f, minReply, replyCap);
             if (Time.time < howlUntil) return;
             vision.enabled = true;
-            Current = Scent >= 1f ? State.Stalking : State.Prowling;
+            Scent = 0f;
+            noseBack = Time.time + noseRest;
+            pauseTimer = noseRest;
+            Current = State.Prowling;
         }
 
         void Fetch()
@@ -391,7 +415,19 @@ namespace ShapeShifty.AI
                 GiveUpBone();
                 return;
             }
-            if (!MoveTowards(bone.transform.position, stalkSpeed, true)) return;
+            // Near enough to get its teeth into: it may be lying against a rock.
+            Vector3 to = bone.transform.position - transform.position;
+            to.y = 0f;
+            if (to.magnitude > 1f)
+            {
+                MoveTowards(bone.transform.position, fetchSpeed, true);
+                // Can't get any closer: forgets about it.
+                if (to.magnitude < fetchBest - 0.1f) { fetchBest = to.magnitude; fetchStuck = 0f; }
+                else fetchStuck += Time.deltaTime;
+                if (fetchStuck > 3f) { uninteresting = bone; GiveUpBone(); }
+                return;
+            }
+            Turn(Flat(to));
             bone.ClaimedBy = this;
             timer = gnawTime;
             Current = State.Gnawing;

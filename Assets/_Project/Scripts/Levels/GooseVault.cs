@@ -106,8 +106,8 @@ namespace ShapeShifty.Levels
             }
             if (hud == null || restoring) return;
             hud.ShowMessage(all
-                ? $"{l.name} done! All {locks.Length} locks are open: grab the Golden Goose!"
-                : $"{l.name} done! {OpenCount} of {locks.Length} locks open");
+                ? $"The {l.name.ToLower()} is open! That's all {locks.Length}: grab the Golden Goose!"
+                : $"The {l.name.ToLower()} is open! {OpenCount} of {locks.Length} locks open");
         }
 
         void GrabGoose()

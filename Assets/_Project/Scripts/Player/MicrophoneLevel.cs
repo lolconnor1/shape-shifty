@@ -22,6 +22,8 @@ namespace ShapeShifty.Player
         [SerializeField] float floorRiseTime = 20f;
         [Tooltip("Seconds for the measured background level to drop in a room that's gone quiet.")]
         [SerializeField] float floorFallTime = 1.5f;
+        [Tooltip("Noise louder than a howl for longer than this (s) is taken for the room, or the game itself coming out of the speakers, and the background rises to meet it.")]
+        [SerializeField] float longestShout = 3.5f;
         [SerializeField] int sampleRate = 16000;
         [Tooltip("How many of the latest samples the level is measured over.")]
         [SerializeField] int windowSize = 1024;
@@ -40,6 +42,8 @@ namespace ShapeShifty.Player
 
         // Tests can feed in a pretend level instead of a real microphone. Negative = off.
         [System.NonSerialized] public float simulatedLevel = -1f;
+
+        float loudTime;
 
 #if UNITY_WEBGL && !UNITY_EDITOR
         [DllImport("__Internal")] static extern void WebMic_Start();
@@ -106,9 +110,12 @@ namespace ShapeShifty.Player
         {
             Level = simulatedLevel >= 0f ? simulatedLevel : State == Status.Listening ? Read() : 0f;
             if (!IsLive) return;
-            // The background creeps up slowly and drops quickly, and never learns from a shout.
+            loudTime = Level >= LoudLevel ? loudTime + Time.unscaledDeltaTime : 0f;
+            // The background creeps up slowly and drops quickly, and doesn't learn from a shout
+            // unless it goes on longer than anyone could.
             if (Level < NoiseFloor) NoiseFloor = Mathf.Lerp(NoiseFloor, Level, Time.unscaledDeltaTime / floorFallTime);
             else if (Level < LoudLevel) NoiseFloor = Mathf.Lerp(NoiseFloor, Level, Time.unscaledDeltaTime / floorRiseTime);
+            else if (loudTime > longestShout) NoiseFloor = Mathf.Lerp(NoiseFloor, Level, Time.unscaledDeltaTime / 0.8f);
         }
 
         float Read()

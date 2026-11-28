@@ -28,9 +28,14 @@ MonoBehaviour:
   shoulderOffset: {x: 0.5, y: 0.12, z: 0}
   verticalArmLength: 0.15
   suspicion: 0.8
+  isAnimal: 1
+  weight: 25
   canSwim: 1
   swimSpeed: 6
   leapHeight: 1.4
+  breathTime: 4
   canBellySlide: 1
   slideSpeed: 7
   slideHeight: 0.45
+  canHowl: 0
+  canThrow: 0

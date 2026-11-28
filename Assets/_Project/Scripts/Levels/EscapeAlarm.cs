@@ -23,8 +23,15 @@ namespace ShapeShifty.Levels
 
         [Header("Chaos")]
         [SerializeField] GuardDog[] dogs;
-        [SerializeField] float dogDelay = 1.5f;
+        [SerializeField] float dogDelay = 0.8f;
+        [Tooltip("A look at the kennel as it opens. The dogs come out once it's over (after Head Start), and the clock waits for it.")]
+        [SerializeField] CameraShot dogShot;
+        [Tooltip("Seconds after the shot before the dogs come out: the player's head start.")]
+        [SerializeField] float headStart = 2.2f;
         [SerializeField] GoldenGoose goose;
+        [Tooltip("The siren blares for this long (s), then drops to a murmur so everything else can be heard.")]
+        [SerializeField] float sirenTime = 3.5f;
+        [SerializeField, Range(0f, 1f)] float sirenMurmur = 0.12f;
 
         [Header("Lights")]
         [Tooltip("Pulses towards the alarm colour, as does the ambient light.")]
@@ -72,8 +79,29 @@ namespace ShapeShifty.Levels
         IEnumerator LetTheDogsOut()
         {
             yield return new WaitForSeconds(dogDelay);
+            Sfx.Play(Sound.Growl);
+            if (dogShot != null)
+            {
+                bool over = false;
+                dogShot.onDone.AddListener(() => over = true);
+                dogShot.Play();
+                float nextBark = 0f;
+                while (!over)
+                {
+                    if (Time.time >= nextBark)
+                    {
+                        nextBark = Time.time + 0.55f;
+                        var dog = dogs[Random.Range(0, dogs.Length)];
+                        if (dog != null) dog.Bark();
+                    }
+                    yield return null;
+                }
+            }
+            if (hud != null) hud.ShowMessage("The guard dogs are loose. RUN!");
+            yield return new WaitForSeconds(headStart);
             foreach (var dog in dogs) if (dog != null) dog.Release();
-            if (hud != null) hud.ShowMessage("The guard dogs are loose! Only a wolf can outrun them");
+            yield return new WaitForSeconds(sirenTime);
+            Sfx.Fade(siren, Sound.Alarm, sirenMurmur, 2f);
         }
 
         // Out of the zoo: the clock stops.
@@ -87,6 +115,7 @@ namespace ShapeShifty.Levels
         void Update()
         {
             if (!IsRunning) return;
+            if (CameraShot.Playing) deadline += Time.deltaTime;
             float left = Mathf.Max(0f, deadline - Time.time);
             float pulse = 0.5f + 0.5f * Mathf.Sin(Time.time * pulseRate * Mathf.PI * 2f);
             float k = 0.3f + 0.45f * pulse;

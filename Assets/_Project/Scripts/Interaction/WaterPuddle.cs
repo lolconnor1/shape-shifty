@@ -1,6 +1,8 @@
 using System.Collections.Generic;
 using ShapeShifty.AI;
+using ShapeShifty.Audio;
 using ShapeShifty.Player;
+using ShapeShifty.UI;
 using UnityEngine;
 
 namespace ShapeShifty.Interaction
@@ -88,7 +90,9 @@ namespace ShapeShifty.Interaction
 
             water.gameObject.SetActive(radius > 0f);
             water.localScale = new Vector3(radius * 2f, water.localScale.y, radius * 2f);
+            bool wasLive = IsLive;
             IsLive = BareWire.All.Exists(wire => wire.IsLive && Covers(wire.transform.position));
+            if (IsLive && !wasLive) Sfx.Play(Sound.Zap, transform.position);
             if (IsLive)
                 foreach (var wire in BareWire.All)
                     if (!wire.IsLive && Covers(wire.transform.position)) wire.Feed();
@@ -140,6 +144,8 @@ namespace ShapeShifty.Interaction
 
         void StartZap(Transform target, float height)
         {
+            Sfx.Play(Sound.Zap, target.position, 1f, 0.8f);
+            FloatingWord.Spawn(target.position + Vector3.up * (height + 0.3f), "BZZZT!", new Color(0.5f, 0.9f, 1f), 5f);
             zaps.Add(new Zap { target = target, height = height, until = Time.time + crackleTime });
             for (int i = 0; i < 12; i++) Spark(AroundZap(target, height), 4);
         }

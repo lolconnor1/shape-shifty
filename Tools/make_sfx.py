@@ -1,6 +1,11 @@
 # Synthesises Shape-Shifty's placeholder sound effects as 16-bit mono WAVs.
-# Usage: python make_sfx.py <output dir>
+# Usage: python make_sfx.py <output dir> [--all]
+# Most of them have been replaced by CC0 clips (see Assets/_Project/Audio/SFX/CREDITS.md), so
+# only the ones still in use (STILL_USED) are written, unless --all is passed.
 import math, random, struct, sys, wave, os
+
+STILL_USED = {"Alarm", "Squeak"}
+WRITE_ALL = "--all" in sys.argv
 
 SR = 22050
 OUT = sys.argv[1]
@@ -114,6 +119,8 @@ def exp_sweep(f0, f1, sec):
 
 
 def save(name, sig, peak=0.9, fade=0.004, loop=False):
+    if not WRITE_ALL and name not in STILL_USED:
+        return
     m = max(1e-9, max(abs(v) for v in sig))
     sig = [v * peak / m for v in sig]
     if not loop:
@@ -261,10 +268,15 @@ for i, base in enumerate((430, 380)):
     s = shape(s, lambda t, L: min(1, t / 0.02) * min(1, (L - t) / 0.08))
     save(f"Honk_{i + 1}", s, 0.75)
 
-# Siren: 1.2 s per wail, a whole number of cycles at every harmonic so it loops cleanly.
-# Two wails are filtered and the second kept, so the filter has settled at the loop point.
-s = lowpass(osc(2.4, lambda t: 750 + 260 * math.sin(TAU * t / 1.2), harmonics=((3, 0.3), (5, 0.12))), 3000)
-save("Alarm", s[n(1.2):], 0.5, loop=True)
+# Alarm: a soft two-note electric chime rather than a wailing siren, as it goes on for the
+# whole getaway under everything else. Two rounds are filtered and the second kept, so the
+# filter has settled at the loop point.
+s = []
+for k in range(4):
+    tone = osc(0.6, 392 if k % 2 == 0 else 330, harmonics=((2, 0.22), (3, 0.06)))
+    mix(s, shape(tone, lambda t, L: min(1, t / 0.03) * math.exp(-t / 0.35) * min(1, (L - t) / 0.05)), k * 0.6)
+s = lowpass(s, 1300)
+save("Alarm", s[n(1.2):n(2.4)], 0.45, loop=True)
 
 buzz = osc(0.4, 110, "square")
 crackle = highpass(noise(0.4, 40), 2500)
@@ -272,3 +284,36 @@ r = random.Random(41)
 gate = [1.0 if r.random() < 0.35 else 0.15 for _ in range(int(0.4 * 60) + 1)]
 s = [b * 0.5 + c * gate[int(i / SR * 60)] for i, (b, c) in enumerate(zip(buzz, crackle))]
 save("Zap", env(s, 0.002, 0.12, 0.08), 0.6)
+
+# --- Cues ------------------------------------------------------------------------------
+s = env(osc(0.3, exp_sweep(150, 62, 0.08)), 0.002, 0.09)
+mix(s, env(bandpass(noise(0.08, 50), 900, 1.2), 0.001, 0.02), 0, 0.8)
+mix(s, env(bandpass(noise(0.06, 51), 2600, 3), 0.001, 0.012), 0.1, 0.5)
+save("PlateDown", s, 0.8)
+s = env(osc(0.18, exp_sweep(75, 130, 0.1)), 0.004, 0.06)
+mix(s, env(bandpass(noise(0.05, 52), 1500, 2), 0.001, 0.012), 0, 0.4)
+save("PlateUp", s, 0.5)
+
+hum = lowpass(osc(0.9, lambda t: 60 + 60 * min(1, t / 0.25), "saw"), lambda t: 300 + 1500 * min(1, t / 0.3))
+s = shape(hum, lambda t, L: min(1, t / 0.05) * math.exp(-max(0, t - 0.3) / 0.22))
+snap = highpass(noise(0.5, 53), 2200)
+r = random.Random(54)
+gate = [1.0 if r.random() < 0.3 else 0.05 for _ in range(60)]
+mix(s, env([v * gate[int(i / SR * 70) % 60] for i, v in enumerate(snap)], 0.001, 0.18), 0.05, 0.9)
+save("PowerOn", s, 0.8)
+
+s = []
+mix(s, env(osc(0.12, 740, harmonics=((2, 0.2),)), 0.004, 0.05))
+mix(s, env(osc(0.22, 988, harmonics=((2, 0.2),)), 0.004, 0.09), 0.09)
+save("Alert", s, 0.5)
+
+s = []
+mix(s, bell(1047, 0.5, 0.14), 0)
+mix(s, bell(1568, 0.7, 0.2), 0.08)
+save("TaskDone", s, 0.45)
+
+f = lambda t: 92 + 14 * math.sin(math.pi * min(t / 1.0, 1)) + 5 * math.sin(TAU * 23 * t)
+raw = osc(1.1, f, "saw")
+s = mix(lowpass(raw, 700), bandpass(noise(1.1, 55), 420, 1.2), 0, 0.5)
+s = shape(s, lambda t, L: min(1, t / 0.12) * min(1, (L - t) / 0.3) * (0.75 + 0.25 * math.sin(TAU * 27 * t)))
+save("Growl", s, 0.75)

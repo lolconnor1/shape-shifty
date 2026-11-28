@@ -1,5 +1,6 @@
 using System;
 using ShapeShifty.Interaction;
+using ShapeShifty.Levels;
 using UnityEngine;
 
 namespace ShapeShifty.Player
@@ -34,7 +35,7 @@ namespace ShapeShifty.Player
 
         void Update()
         {
-            if (HasDrowned) return;
+            if (HasDrowned || CameraShot.Playing) return;
             Vector3 head = transform.position + Vector3.up * (controller.height * headHeight);
             IsUnderwater = !shapeshifter.Current.canSwim && DeepWater.At(head) != null;
             if (!IsUnderwater)

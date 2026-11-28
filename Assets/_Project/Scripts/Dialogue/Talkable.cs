@@ -21,6 +21,8 @@ namespace ShapeShifty.Dialogue
         public Conversation Conversation => conversation;
         public bool HasSomethingToSay => conversation != null && conversation.lines != null && conversation.lines.Length > 0;
         public bool IsTalking => listener != null;
+        // The player has talked to it.
+        public bool WasHeard { get; private set; }
 
         Transform listener;
 
@@ -33,7 +35,12 @@ namespace ShapeShifty.Dialogue
         }
 
         // Called by the player when a conversation starts and ends.
-        public void StartTalking(Transform with) => listener = with;
+        public void StartTalking(Transform with)
+        {
+            listener = with;
+            WasHeard = true;
+        }
+
         public void StopTalking() => listener = null;
 
         void Update()

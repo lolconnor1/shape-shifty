@@ -18,7 +18,7 @@ namespace ShapeShifty.AI
         [SerializeField] float carriedScale = 0.32f;
         [Tooltip("How high she sits while carried, for each metre of the carrier's height.")]
         [SerializeField] float carriedHeight = 0.92f;
-        [SerializeField] Vector2 honkInterval = new Vector2(1.2f, 2.6f);
+        [SerializeField] Vector2 honkInterval = new Vector2(2.5f, 5f);
 
         public bool IsCarried => shapeshifter != null;
 
@@ -87,10 +87,10 @@ namespace ShapeShifty.AI
 
         void Honk()
         {
-            nextHonk = Time.time + Random.Range(honkInterval.x, honkInterval.y) * (panicking ? 0.6f : 1f);
+            nextHonk = Time.time + Random.Range(honkInterval.x, honkInterval.y) * (panicking ? 0.8f : 1f);
             // Small while she's carried: right by the camera, a big one would fill the screen.
             FloatingWord.Spawn(transform.position + Vector3.up * (transform.lossyScale.y * 1.2f), "HONK!", new Color(1f, 0.84f, 0.3f), IsCarried ? 1.2f : 4f);
-            Sfx.Play(Sound.Honk, transform.position);
+            Sfx.Play(Sound.Honk, transform.position, IsCarried ? 0.6f : 1f);
         }
     }
 }
