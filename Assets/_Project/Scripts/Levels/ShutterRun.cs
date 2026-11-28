@@ -13,7 +13,8 @@ namespace ShapeShifty.Levels
     // and it stays open after that. A shutter never comes down on the player: it waits until
     // they've moved out from under it. After each run the shutters all go back up.
     // Armed (by the escape), the far door shuts again and a run starts by itself as soon as
-    // the player runs in past the first shutter.
+    // the player runs in past the first shutter. Without a starter there's no test at all, only
+    // the escape.
     public class ShutterRun : MonoBehaviour
     {
         [SerializeField] Bullseye starter;
@@ -60,10 +61,12 @@ namespace ShapeShifty.Levels
         {
             var p = GameObject.FindWithTag("Player");
             if (p != null) player = p.transform;
+            // No starter: there's no test, only the escape, so the far door stands open till then.
+            if (starter == null) SetSolved();
         }
 
-        void OnEnable() => starter.Hit += OnStarterHit;
-        void OnDisable() => starter.Hit -= OnStarterHit;
+        void OnEnable() { if (starter != null) starter.Hit += OnStarterHit; }
+        void OnDisable() { if (starter != null) starter.Hit -= OnStarterHit; }
 
         float Along(Vector3 point) => Vector3.Dot(point - origin, along);
         float Across(Vector3 point) { Vector3 d = point - origin; d.y = 0f; return Mathf.Abs(Vector3.Dot(d, Vector3.Cross(Vector3.up, along))); }
@@ -132,7 +135,7 @@ namespace ShapeShifty.Levels
                 case State.Resetting:
                     if (Time.time < resetAt) break;
                     foreach (var shutter in shutters) shutter.Open();
-                    starter.ResetTarget();
+                    if (starter != null) starter.ResetTarget();
                     if (solved) farDoor.Open();
                     state = State.Idle;
                     break;

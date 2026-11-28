@@ -13,6 +13,8 @@ namespace ShapeShifty.Audio
         const int Voices = 24;
         // The same sound asked for again this soon is skipped, e.g. a splash hitting five things.
         const float RepeatGap = 0.04f;
+        // At most this many of any one sound at once: a pack barking is a din, not twelve barks.
+        const int MostAtOnce = 3;
         const float SettleTime = 0.3f;
 
         static Sfx instance;
@@ -75,6 +77,25 @@ namespace ShapeShifty.Audio
             voice.loop = false;
         }
 
+        // Turns a loop down (or up) to a volume, as given to Loop, over some seconds.
+        public static void Fade(AudioSource voice, Sound sound, float volume, float seconds)
+        {
+            if (voice == null || instance == null) return;
+            var entry = instance.bank.Get(sound);
+            if (entry != null) instance.StartCoroutine(instance.FadeTo(voice, entry.volume * volume * instance.bank.masterVolume, seconds));
+        }
+
+        System.Collections.IEnumerator FadeTo(AudioSource voice, float volume, float seconds)
+        {
+            var clip = voice.clip;
+            float from = voice.volume;
+            for (float t = 0f; t < seconds && voice.loop && voice.clip == clip; t += Time.deltaTime)
+            {
+                voice.volume = Mathf.Lerp(from, volume, t / seconds);
+                yield return null;
+            }
+        }
+
         public static void StopLoops()
         {
             if (instance == null) return;
@@ -88,7 +109,13 @@ namespace ShapeShifty.Audio
             // Just after a scene loads, things being put back how they were (doors, solved
             // puzzles after a restart) aren't heard.
             if (Time.timeSinceLevelLoad < SettleTime) return null;
-            if (!loop && Time.unscaledTime - lastPlayed[(int)sound] < RepeatGap) return null;
+            if (!loop)
+            {
+                if (Time.unscaledTime - lastPlayed[(int)sound] < Mathf.Max(RepeatGap, entry.minGap)) return null;
+                int playing = 0;
+                foreach (var v in voices)
+                    if (v.isPlaying && System.Array.IndexOf(entry.clips, v.clip) >= 0 && ++playing >= MostAtOnce) return null;
+            }
             lastPlayed[(int)sound] = Time.unscaledTime;
 
             var voice = FreeVoice();

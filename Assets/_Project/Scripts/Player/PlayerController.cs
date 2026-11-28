@@ -77,6 +77,10 @@ namespace ShapeShifty.Player
         // Set while the player is howling: they stay put and can't jump, but keep their pose
         // and can still look round.
         public bool Rooted { get; set; }
+        // Set in a level that has to be crept through (see NoSprint).
+        public bool NoSprint { get; set; }
+        // The player is pushing to move, whether or not they can.
+        public bool WantsToMove => moveAction.ReadValue<Vector2>().sqrMagnitude > 0.25f;
         // Degrees the body tips back, e.g. to howl at the moon.
         public float HeadBack { get; set; }
         // Set while the player can throw (PlayerThrower): the body faces where the camera
@@ -220,7 +224,7 @@ namespace ShapeShifty.Player
 
         void Walk(Vector2 input)
         {
-            float speed = sprintAction.IsPressed() ? sprintSpeed : moveSpeed;
+            float speed = sprintAction.IsPressed() && !NoSprint ? sprintSpeed : moveSpeed;
             Vector3 targetVelocity = Vector3.zero;
             if (FacesCamera) bodyYaw = Mathf.SmoothDampAngle(bodyYaw, cameraTarget.eulerAngles.y, ref turnVelocity, turnSmoothTime * 0.5f);
             if (input.sqrMagnitude > 0.01f)

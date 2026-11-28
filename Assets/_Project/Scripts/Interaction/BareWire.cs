@@ -1,4 +1,6 @@
 using System.Collections.Generic;
+using ShapeShifty.Audio;
+using ShapeShifty.UI;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -32,7 +34,13 @@ namespace ShapeShifty.Interaction
         void OnEnable() => All.Add(this);
         void OnDisable() => All.Remove(this);
 
-        public void SwitchOn() => live = true;
+        public void SwitchOn()
+        {
+            if (live) return;
+            live = true;
+            Burst();
+        }
+
         public void SwitchOff() => live = false;
 
         // Called by a live puddle covering this wire, every frame it does.
@@ -45,9 +53,20 @@ namespace ShapeShifty.Interaction
             if (powered != IsPowered)
             {
                 IsPowered = powered;
+                if (powered) Burst();
                 (powered ? onPowered : onUnpowered).Invoke();
             }
             if (live || powered) Spark();
+        }
+
+        // Just got power: a shower of sparks and a bang, so it can't be missed.
+        void Burst()
+        {
+            Sfx.Play(Sound.PowerOn, transform.position);
+            FloatingWord.Spawn(transform.position + Vector3.up * 0.7f, "FZZT!", new Color(0.5f, 0.9f, 1f), 4f);
+            if (sparks == null) return;
+            var emit = new ParticleSystem.EmitParams { position = transform.position, applyShapeToPosition = true };
+            sparks.Emit(emit, 40);
         }
 
         void Spark()

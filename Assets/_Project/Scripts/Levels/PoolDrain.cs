@@ -1,5 +1,6 @@
 using System.Collections;
 using ShapeShifty.Interaction;
+using ShapeShifty.UI;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -16,6 +17,9 @@ namespace ShapeShifty.Levels
         [SerializeField] Lamp[] lamps;
         [Tooltip("Played each time a shutter opens.")]
         [SerializeField] ParticleSystem bubbles;
+
+        [Tooltip("A look at the drain as each shutter opens.")]
+        [SerializeField] CameraShot shot;
 
         [Header("Draining")]
         [SerializeField] WaterLevel water;
@@ -41,6 +45,9 @@ namespace ShapeShifty.Levels
                     if (lamps[i] != null) lamps[i].On();
             if (bubbles != null) bubbles.Play();
             OpenCount++;
+            if (shot != null) shot.Play();
+            var hud = FindFirstObjectByType<ShapeHud>();
+            if (hud != null) hud.ShowMessage(OpenCount < shutters.Length ? $"Drain shutter open: {OpenCount} of {shutters.Length}" : "Every shutter is open: the pool is draining!", 4f);
             if (OpenCount >= shutters.Length) StartCoroutine(Drain());
         }
 

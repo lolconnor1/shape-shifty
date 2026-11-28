@@ -9611,6 +9611,91 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_Asset: {fileID: 600876157}
   m_ActionId: c95b2375-e6d9-4b88-9c4c-c5e76515df4b
+--- !u!1 &520109503
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 520109504}
+  - component: {fileID: 520109505}
+  m_Layer: 0
+  m_Name: Objectives
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &520109504
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 520109503}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 596026768}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &520109505
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 520109503}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6bd416cd6c7b09c4e8423e1970ed816a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  tasks:
+  - id: zoo
+    text: Sneak up to the back of the zoo
+    kind: 3
+    form: {fileID: 0}
+    target: {fileID: 789718430}
+    radius: 14
+    after: 
+    partOf: 
+  - id: rat
+    text: Find a smaller shape to take
+    kind: 1
+    form: {fileID: 11400000, guid: 9b4e3530a53558343b8c0d697acfbb65, type: 2}
+    target: {fileID: 789718430}
+    radius: 4
+    after: zoo
+    partOf: 
+  - id: warehouse
+    text: Get inside the warehouse
+    kind: 3
+    form: {fileID: 0}
+    target: {fileID: 753857976}
+    radius: 16
+    after: rat
+    partOf: 
+  - id: cover
+    text: Get the cover off the drain pipe
+    kind: 0
+    form: {fileID: 0}
+    target: {fileID: 924054133}
+    radius: 4
+    after: warehouse
+    partOf: 
+  - id: exit
+    text: Escape down the drain
+    kind: 0
+    form: {fileID: 0}
+    target: {fileID: 1732841657}
+    radius: 4
+    after: cover
+    partOf: 
 --- !u!1001 &521387809
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -11186,6 +11271,7 @@ Transform:
   - {fileID: 1732841657}
   - {fileID: 957033761}
   - {fileID: 1480176497}
+  - {fileID: 520109504}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &600876157
@@ -20488,6 +20574,7 @@ MonoBehaviour:
   listeners:
   - {fileID: 1986665778}
   inspectSpot: {fileID: 690098412}
+  spacing: 1.4
   inspectTime: 6
   alarmTime: 10
   warningLight: {fileID: 2002635630}
@@ -21559,6 +21646,18 @@ MonoBehaviour:
           m_IntArgument: 0
           m_FloatArgument: 0
           m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+      - m_Target: {fileID: 520109505}
+        m_TargetAssemblyTypeName: ShapeShifty.Levels.Objectives, Assembly-CSharp
+        m_MethodName: Complete
+        m_Mode: 5
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: cover
           m_BoolArgument: 0
         m_CallState: 2
   onSwitchedOff:
@@ -31166,6 +31265,38 @@ PrefabInstance:
       propertyPath: screenFade
       value: 
       objectReference: {fileID: 957033762}
+    - target: {fileID: 4945469018295164159, guid: 08fdad8ff421f4a418e95fcd985be404, type: 3}
+      propertyPath: onReached.m_PersistentCalls.m_Calls.Array.size
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4945469018295164159, guid: 08fdad8ff421f4a418e95fcd985be404, type: 3}
+      propertyPath: onReached.m_PersistentCalls.m_Calls.Array.data[0].m_Mode
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 4945469018295164159, guid: 08fdad8ff421f4a418e95fcd985be404, type: 3}
+      propertyPath: onReached.m_PersistentCalls.m_Calls.Array.data[0].m_Target
+      value: 
+      objectReference: {fileID: 520109505}
+    - target: {fileID: 4945469018295164159, guid: 08fdad8ff421f4a418e95fcd985be404, type: 3}
+      propertyPath: onReached.m_PersistentCalls.m_Calls.Array.data[0].m_CallState
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 4945469018295164159, guid: 08fdad8ff421f4a418e95fcd985be404, type: 3}
+      propertyPath: onReached.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
+      value: Complete
+      objectReference: {fileID: 0}
+    - target: {fileID: 4945469018295164159, guid: 08fdad8ff421f4a418e95fcd985be404, type: 3}
+      propertyPath: onReached.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
+      value: ShapeShifty.Levels.Objectives, Assembly-CSharp
+      objectReference: {fileID: 0}
+    - target: {fileID: 4945469018295164159, guid: 08fdad8ff421f4a418e95fcd985be404, type: 3}
+      propertyPath: onReached.m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_StringArgument
+      value: exit
+      objectReference: {fileID: 0}
+    - target: {fileID: 4945469018295164159, guid: 08fdad8ff421f4a418e95fcd985be404, type: 3}
+      propertyPath: onReached.m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_ObjectArgumentAssemblyTypeName
+      value: UnityEngine.Object, UnityEngine
+      objectReference: {fileID: 0}
     - target: {fileID: 5738632224524702747, guid: 08fdad8ff421f4a418e95fcd985be404, type: 3}
       propertyPath: m_Name
       value: LevelExit
@@ -39371,6 +39502,30 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 4101214820318510184, guid: 6b68b8e472bdeaa4b93d0f141d1c4979, type: 3}
+      propertyPath: m_AnchorMax.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4101214820318510184, guid: 6b68b8e472bdeaa4b93d0f141d1c4979, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4101214820318510184, guid: 6b68b8e472bdeaa4b93d0f141d1c4979, type: 3}
+      propertyPath: m_AnchorMin.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4101214820318510184, guid: 6b68b8e472bdeaa4b93d0f141d1c4979, type: 3}
+      propertyPath: m_AnchorMin.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4101214820318510184, guid: 6b68b8e472bdeaa4b93d0f141d1c4979, type: 3}
+      propertyPath: m_SizeDelta.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4101214820318510184, guid: 6b68b8e472bdeaa4b93d0f141d1c4979, type: 3}
+      propertyPath: m_SizeDelta.y
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 5385529194485305827, guid: 6b68b8e472bdeaa4b93d0f141d1c4979, type: 3}
       propertyPath: m_AnchorMax.x
       value: 0
@@ -39403,6 +39558,14 @@ PrefabInstance:
       propertyPath: m_AnchoredPosition.x
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 6187045820123406762, guid: 6b68b8e472bdeaa4b93d0f141d1c4979, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6187045820123406762, guid: 6b68b8e472bdeaa4b93d0f141d1c4979, type: 3}
+      propertyPath: m_AnchorMin.y
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6414670253675729718, guid: 6b68b8e472bdeaa4b93d0f141d1c4979, type: 3}
       propertyPath: m_SizeDelta.x
       value: 0
@@ -39418,6 +39581,10 @@ PrefabInstance:
     - target: {fileID: 6992716104909366280, guid: 6b68b8e472bdeaa4b93d0f141d1c4979, type: 3}
       propertyPath: m_Name
       value: PlayerRig
+      objectReference: {fileID: 0}
+    - target: {fileID: 8683965284176180931, guid: 6b68b8e472bdeaa4b93d0f141d1c4979, type: 3}
+      propertyPath: m_SizeDelta.y
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

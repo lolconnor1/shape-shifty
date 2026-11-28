@@ -1,4 +1,6 @@
 using System.Collections.Generic;
+using ShapeShifty.Audio;
+using ShapeShifty.UI;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -73,6 +75,8 @@ namespace ShapeShifty.Interaction
             {
                 IsPressed = pressed;
                 if (lamp != null) lamp.sharedMaterial = pressed ? lampOn : lampOff;
+                Sfx.Play(pressed ? Sound.PlateDown : Sound.PlateUp, transform.position);
+                if (pressed) FloatingWord.Spawn(transform.position + Vector3.up * 0.8f, "CLUNK!", new Color(0.6f, 1f, 0.6f), 4f);
                 (pressed ? onPressed : onReleased).Invoke();
             }
 

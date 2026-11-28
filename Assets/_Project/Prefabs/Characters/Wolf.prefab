@@ -53,6 +53,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   range: 14
   viewAngle: 120
+  nearRange: 0
+  nearAngle: 220
   eyeHeight: 0.95
   targetHeight: 0.5
   obstacleMask:
@@ -105,17 +107,19 @@ MonoBehaviour:
   trackSpeed: 1.8
   trackStopDistance: 2.8
   loseRange: 16
-  stalkSpeed: 13
+  stalkSpeed: 6.5
   pounceRange: 2.5
   pounceTime: 0.4
   biteRange: 1.2
-  chargeSpeed: 10
+  chargeSpeed: 7.5
   hearingRange: 12
-  maxReply: 6
-  minReply: 1.5
-  boredomFactor: 0.6
+  maxReply: 8
+  minReply: 3.5
+  noseRest: 2
+  boredomFactor: 0.8
   boredomTime: 45
-  boneRange: 12
+  boneRange: 15
+  fetchSpeed: 8
   gnawTime: 6
   restTime: 60
   body: {fileID: 5285317466073376167}

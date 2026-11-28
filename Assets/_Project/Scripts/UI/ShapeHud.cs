@@ -47,7 +47,16 @@ namespace ShapeShifty.UI
         [Tooltip("The fill turns to the low colour below this much breath.")]
         [SerializeField, Range(0f, 1f)] float lowBreath = 0.35f;
 
+        [Header("Habitat")]
+        [Tooltip("Says how staff will treat the current form here. Only shown in levels with staff.")]
+        [SerializeField] CanvasGroup habitatTag;
+        [SerializeField] TMP_Text habitatText;
+        [SerializeField] Color ignoredColor = new Color(0.6f, 0.95f, 0.55f);
+        [SerializeField] Color outOfPlaceColor = new Color(1f, 0.78f, 0.3f);
+        [SerializeField] Color personColor = new Color(1f, 0.45f, 0.4f);
+
         readonly List<ShapeSlot> slots = new List<ShapeSlot>();
+        string habitatShown;
         string scanKey, shiftKey, interactKey;
         string idleHint;
         int shownCooldownTenths = -1;
@@ -66,6 +75,7 @@ namespace ShapeShifty.UI
             slotTemplate.gameObject.SetActive(false);
             bar.alpha = 0f;
             breathMeter.alpha = 0f;
+            if (habitatTag != null) habitatTag.alpha = 0f;
         }
 
         void OnEnable()
@@ -118,6 +128,27 @@ namespace ShapeShifty.UI
             breathFill.fillAmount = breath.Breath;
             breathFill.color = breath.Breath < lowBreath ? lowBreathColor : breathColor;
             breathMeter.alpha = Mathf.MoveTowards(breathMeter.alpha, breath.Breath < 1f ? 1f : 0f, Time.unscaledDeltaTime * 4f);
+            UpdateHabitat();
+        }
+
+        // Blending in, out of place (staff will come and grab you) or a person (caught on sight).
+        void UpdateHabitat()
+        {
+            if (habitatTag == null) return;
+            bool staff = ShapeShifty.AI.EmployeePatrol.All.Count > 0 && shapeshifter.Current != null && !talker.IsTalking;
+            habitatTag.alpha = Mathf.MoveTowards(habitatTag.alpha, staff ? 1f : 0f, Time.unscaledDeltaTime * 4f);
+            if (!staff || shapeshifter.IsShifting) return;
+
+            var form = shapeshifter.Current;
+            string text; Color color;
+            if (form.suspicion <= 0f) { text = $"Staff take no notice of a {form.displayName.ToLower()}"; color = ignoredColor; }
+            else if (shapeshifter.Suspicion <= 0f) { text = "Blending in: you belong here"; color = ignoredColor; }
+            else if (form.isAnimal) { text = "Out of your enclosure: staff will try to grab you"; color = outOfPlaceColor; }
+            else { text = "Staff will catch you on sight"; color = personColor; }
+            if (text == habitatShown) return;
+            habitatShown = text;
+            habitatText.text = text;
+            habitatText.color = color;
         }
 
         // Only touches the text when the tenths change.
@@ -138,10 +169,12 @@ namespace ShapeShifty.UI
         void OnShiftLocked() => ShowMessage($"No changing back here: you're a {shapeshifter.Current.displayName.ToLower()} now");
 
         // Shown under the aiming dot for a few seconds, e.g. by a level's puzzles.
-        public void ShowMessage(string text)
+        public void ShowMessage(string text) => ShowMessage(text, messageTime);
+
+        public void ShowMessage(string text, float seconds)
         {
             message = text;
-            messageUntil = Time.unscaledTime + messageTime;
+            messageUntil = Time.unscaledTime + seconds;
         }
 
         void RefreshBar()

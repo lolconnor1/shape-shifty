@@ -51,6 +51,7 @@ namespace ShapeShifty.AI
 
         [Header("The way out")]
         [SerializeField] Hatch gate;
+        public UnityEngine.Events.UnityEvent onDefeated = new UnityEngine.Events.UnityEvent();
 
         [Header("Visual")]
         [SerializeField] Transform body;
@@ -283,6 +284,7 @@ namespace ShapeShifty.AI
                 rb.angularVelocity = UnityEngine.Random.onUnitSphere * 6f;
             }
             if (gate != null) gate.Open();
+            onDefeated.Invoke();
             Beaten?.Invoke();
         }
 

@@ -379,7 +379,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fa56d962087f52743882e821f93214a9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  settleTime: 2.5
+  settleTime: 1.5
   heldRotation: {x: 0, y: 90, z: 0}
 --- !u!1 &4948687428609011538
 GameObject:

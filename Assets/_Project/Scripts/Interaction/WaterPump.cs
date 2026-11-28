@@ -1,4 +1,5 @@
 using System.Collections;
+using ShapeShifty.Levels;
 using UnityEngine;
 
 namespace ShapeShifty.Interaction
@@ -30,10 +31,21 @@ namespace ShapeShifty.Interaction
         {
             IsRunning = true;
             float full = water.Level;
-            yield return water.MoveTo(drainedY, pumpTime);
-            yield return new WaitForSeconds(holdTime);
-            yield return water.MoveTo(full, refillTime);
+            yield return Move(full, drainedY, pumpTime);
+            yield return Move(drainedY, drainedY, holdTime);
+            yield return Move(drainedY, full, refillTime);
             IsRunning = false;
+        }
+
+        // Waits out any camera shot, so the player doesn't lose time to it.
+        IEnumerator Move(float from, float to, float seconds)
+        {
+            for (float t = 0f; t < seconds; t += CameraShot.Playing ? 0f : Time.deltaTime)
+            {
+                water.SetLevel(Mathf.Lerp(from, to, t / seconds));
+                yield return null;
+            }
+            water.SetLevel(to);
         }
     }
 }

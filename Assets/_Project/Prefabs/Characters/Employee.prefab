@@ -277,23 +277,25 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5de2c320ce95e1c4f870381dfe6e2438, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  range: 18
+  range: 22
   viewAngle: 110
+  nearRange: 2.5
+  nearAngle: 220
   eyeHeight: 1.6
   targetHeight: 1
   obstacleMask:
     serializedVersion: 2
     m_Bits: 4294967291
-  timeToSpot: 1
-  edgeStrength: 0.15
-  stillMultiplier: 0.4
+  timeToSpot: 0.9
+  edgeStrength: 0.4
+  stillMultiplier: 0.55
   fastMultiplier: 2
   fastSpeed: 8
   shiftingMultiplier: 4
   seesThroughDisguises: 0
   ownKind: {fileID: 0}
   catchesOnSpotted: 1
-  decayRate: 0.35
+  decayRate: 0.25
   onSpotted:
     m_PersistentCalls:
       m_Calls: []

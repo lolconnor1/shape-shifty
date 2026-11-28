@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using ShapeShifty.Audio;
+using ShapeShifty.Levels;
 using ShapeShifty.UI;
 using UnityEngine;
 
@@ -78,9 +79,17 @@ namespace ShapeShifty.AI
             nextBark = Time.time + UnityEngine.Random.Range(0f, barkInterval.x);
         }
 
+        // A bark in the kennel, before it's let out.
+        public void Bark()
+        {
+            lastBark = Time.time;
+            FloatingWord.Spawn(transform.position + Vector3.up * 1.6f, "WOOF!", new Color(1f, 0.85f, 0.6f), 3f);
+            Sfx.Play(Sound.Bark, transform.position);
+        }
+
         void Update()
         {
-            if (!IsLoose || player == null || caught) return;
+            if (!IsLoose || player == null || caught || CameraShot.Playing) return;
             float dt = Time.deltaTime;
             bool playerInside = Inside(player.position);
             Vector3 target = playerInside ? player.position : Edge(player.position);
@@ -141,9 +150,7 @@ namespace ShapeShifty.AI
             if (Time.time >= nextBark)
             {
                 nextBark = Time.time + UnityEngine.Random.Range(barkInterval.x, barkInterval.y);
-                lastBark = Time.time;
-                FloatingWord.Spawn(transform.position + Vector3.up * 1.6f, "WOOF!", new Color(1f, 0.85f, 0.6f), 3f);
-                Sfx.Play(Sound.Bark, transform.position);
+                Bark();
             }
 
             Vector3 gap = player.position - transform.position;

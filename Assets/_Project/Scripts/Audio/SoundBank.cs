@@ -13,10 +13,12 @@ namespace ShapeShifty.Audio
         Throw, Splat, Hurt, Squeak, Defeat, Pickup, Ding,
         Solved, Caught, LevelDone, UiClick, Talk,
         Bark, Honk, Alarm, Zap,
+        PlateDown, PlateUp, PowerOn, Alert, TaskDone, Growl,
+        GlassCrack, GlassBreak, PowerDown,
     }
 
     // The clips for each Sound, with how loud they play. The one in a Resources folder named
-    // "SoundBank" is the one Sfx uses. Tools/make_sfx.py makes the placeholder clips.
+    // "SoundBank" is the one Sfx uses. The clips are in Audio/SFX (see CREDITS.md there).
     [CreateAssetMenu(menuName = "Shape-Shifty/Sound Bank")]
     public class SoundBank : ScriptableObject
     {
@@ -29,6 +31,8 @@ namespace ShapeShifty.Audio
             [Range(0f, 1f)] public float volume = 0.8f;
             [Tooltip("Pitch varies by up to this much either way, so repeats don't sound identical.")]
             [Range(0f, 0.5f)] public float pitchJitter = 0.05f;
+            [Tooltip("Asked for again sooner than this (s), by anyone, it isn't played.")]
+            public float minGap;
         }
 
         [Range(0f, 1f)] public float masterVolume = 1f;

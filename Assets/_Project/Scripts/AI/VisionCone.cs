@@ -1,4 +1,6 @@
+using ShapeShifty.Audio;
 using ShapeShifty.Interaction;
+using ShapeShifty.Levels;
 using ShapeShifty.Player;
 using ShapeShifty.Shapes;
 using UnityEngine;
@@ -8,7 +10,8 @@ namespace ShapeShifty.AI
 {
     // Sees the player when they're inside a horizontal cone with a clear line of sight,
     // and fills a detection meter while they stay seen. How fast it fills depends on
-    // distance, how fast the player moves, and their current form: animals that belong
+    // distance, how fast the player moves, and their current form (and anything right next to
+    // them they notice out of the corner of their eye): animals that belong
     // here barely register, but changing form in plain sight is very noticeable. A player
     // completely under deep water can't be seen at all.
     // Also draws the cone on the ground, cut short by anything waist-high or taller, so
@@ -23,6 +26,9 @@ namespace ShapeShifty.AI
         [Header("Sight")]
         [SerializeField] float range = 18f;
         [SerializeField, Range(1f, 180f)] float viewAngle = 110f;
+        [Tooltip("Anything this close (m) is noticed over a wider angle. 0 for none. Drawn as part of the cone.")]
+        [SerializeField] float nearRange;
+        [SerializeField, Range(1f, 360f)] float nearAngle = 220f;
         [SerializeField] float eyeHeight = 1.6f;
         [Tooltip("Height cover must reach to block the drawn cone. Also the point on the player that has to be visible, if they have no CharacterController (otherwise its centre is used).")]
         [SerializeField] float targetHeight = 1f;
@@ -44,6 +50,8 @@ namespace ShapeShifty.AI
         [SerializeField] float shiftingMultiplier = 4f;
         [Tooltip("Treat every form as fully suspicious, even ones employees ignore. For security cameras, which see rats too.")]
         [SerializeField] bool seesThroughDisguises;
+        [Tooltip("Only looks for people: every animal form goes unnoticed. For security cameras watching for burglars.")]
+        [SerializeField] bool peopleOnly;
         [Tooltip("A form this watcher takes for one of its own kind and ignores completely, even with Sees Through Disguises on. For animals that go for anything that isn't one of them.")]
         [SerializeField] ShapeDefinition ownKind;
         [Tooltip("Spotting the player ends the level (see CaughtScreen). Off for watchers that react some other way, like a wolf that charges.")]
@@ -51,6 +59,11 @@ namespace ShapeShifty.AI
         [Tooltip("Detection lost per second while the player is out of sight or not suspicious.")]
         [SerializeField] float decayRate = 0.35f;
         public UnityEvent onSpotted;
+        // Spotted an escaped animal rather than a person, and something (EmployeePatrol) is
+        // listening: instead of On Spotted, this goes off and Grabbing stays true until they
+        // lose sight of it for long enough (Detection back to 0), or Catch() is called.
+        // Seeing it as a person, or changing form, meanwhile catches the player as usual.
+        public event System.Action SpottedAnimal;
 
         [Header("Cone Visual")]
         [SerializeField] MeshFilter coneMesh;
@@ -69,6 +82,18 @@ namespace ShapeShifty.AI
         public bool CanSeeTarget { get; private set; }
         public Vector3 LastSeenPosition { get; private set; }
         public bool CatchesOnSpotted => catchesOnSpotted;
+        public bool Grabbing { get; private set; }
+
+        // The player's escaped-animal form, outside anywhere it blends in.
+        bool TargetIsLooseAnimal =>
+            targetShapeshifter != null && !targetShapeshifter.IsShifting && targetShapeshifter.Current.isAnimal;
+
+        // Got hold of the escaped animal: the player is caught.
+        public void Catch()
+        {
+            Grabbing = false;
+            onSpotted.Invoke();
+        }
 
         static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
         static readonly int BaseMapId = Shader.PropertyToID("_BaseMap");
@@ -118,14 +143,14 @@ namespace ShapeShifty.AI
         void OnDisable()
         {
             Detection = 0f;
-            IsSpotted = false;
+            IsSpotted = Grabbing = false;
             CanSeeTarget = false;
             coneVisibility = 0f;
             if (coneRenderer != null) coneRenderer.enabled = false;
         }
 
-        // Alpha ramp along U (0 = at the employee, 1 = full range). Follows Falloff, squared so
-        // the cone visibly fades out towards its edge rather than ending at a faint tint.
+        // Alpha ramp along U (0 = at the employee, 1 = full range). Follows Falloff, so
+        // the cone looks as strong as it is all the way to its edge.
         Texture2D BuildFadeTexture()
         {
             const int Size = 64;
@@ -133,7 +158,7 @@ namespace ShapeShifty.AI
             for (int x = 0; x < Size; x++)
             {
                 float strength = Falloff(x / (Size - 1f));
-                texture.SetPixel(x, 0, new Color(1f, 1f, 1f, strength * strength));
+                texture.SetPixel(x, 0, new Color(1f, 1f, 1f, strength));
             }
             texture.Apply();
             return texture;
@@ -154,23 +179,31 @@ namespace ShapeShifty.AI
         void Update()
         {
             float distanceFraction = 0f;
-            CanSeeTarget = target != null && CheckSight(out distanceFraction);
+            CanSeeTarget = target != null && !CameraShot.Playing && CheckSight(out distanceFraction);
             float rate = CanSeeTarget ? Falloff(distanceFraction) * Noticeability() / timeToSpot : 0f;
             if (rate > 0f)
             {
                 LastSeenPosition = target.position;
+                if (Detection <= 0f && catchesOnSpotted) Sfx.Play(Sound.Alert, transform.position);
                 Detection = Mathf.Min(1f, Detection + rate * Time.deltaTime);
                 if (Detection >= 1f && !IsSpotted)
                 {
                     IsSpotted = true;
                     Debug.Log($"{name} spotted the player!", this);
-                    onSpotted.Invoke();
+                    if (catchesOnSpotted && SpottedAnimal != null && TargetIsLooseAnimal)
+                    {
+                        Grabbing = true;
+                        SpottedAnimal.Invoke();
+                    }
+                    else onSpotted.Invoke();
                 }
+                // Chasing an animal that turns out to be a person, or turns into something.
+                else if (Grabbing && !TargetIsLooseAnimal) Catch();
             }
             else
             {
                 Detection = Mathf.Max(0f, Detection - decayRate * Time.deltaTime);
-                if (Detection <= 0f) IsSpotted = false;
+                if (Detection <= 0f) IsSpotted = Grabbing = false;
             }
         }
 
@@ -182,13 +215,15 @@ namespace ShapeShifty.AI
             if (targetShapeshifter == null) return MovementMultiplier();
             if (targetShapeshifter.IsShifting) return shiftingMultiplier;
             if (ownKind != null && targetShapeshifter.Current == ownKind) return 0f;
+            if (peopleOnly && targetShapeshifter.Current.isAnimal) return 0f;
             if (seesThroughDisguises) return MovementMultiplier();
             return MovementMultiplier() * targetShapeshifter.Suspicion;
         }
 
         bool TargetIgnored() =>
             targetShapeshifter != null && !targetShapeshifter.IsShifting
-            && ((ownKind != null && targetShapeshifter.Current == ownKind) || (!seesThroughDisguises && targetShapeshifter.Suspicion <= 0f));
+            && ((ownKind != null && targetShapeshifter.Current == ownKind) || (peopleOnly && targetShapeshifter.Current.isAnimal)
+                || (!seesThroughDisguises && targetShapeshifter.Suspicion <= 0f));
 
         // Moving targets are easier to notice: slow when still, fast when sprinting.
         float MovementMultiplier()
@@ -212,7 +247,8 @@ namespace ShapeShifty.AI
             Vector3 toTarget = point - eye;
             Vector3 flat = Vector3.ProjectOnPlane(toTarget, Vector3.up);
             if (flat.magnitude > range) return false;
-            if (Vector3.Angle(Flat(transform.forward), flat) > viewAngle * 0.5f) return false;
+            float angle = Vector3.Angle(Flat(transform.forward), flat);
+            if (angle > viewAngle * 0.5f && (flat.magnitude > nearRange || angle > nearAngle * 0.5f)) return false;
 
             float distance = toTarget.magnitude;
             if (Physics.Raycast(eye, toTarget / distance, out RaycastHit hit, distance, obstacleMask, QueryTriggerInteraction.Ignore)
@@ -231,12 +267,14 @@ namespace ShapeShifty.AI
 
             Vector3 origin = transform.position + Vector3.up * targetHeight;
             Vector3 forward = Flat(transform.forward);
+            float drawn = nearRange > 0f ? Mathf.Max(viewAngle, nearAngle) : viewAngle;
             for (int i = 0; i <= rayCount; i++)
             {
-                float angle = -viewAngle * 0.5f + viewAngle * i / rayCount;
+                float angle = -drawn * 0.5f + drawn * i / rayCount;
+                float reach = Mathf.Abs(angle) <= viewAngle * 0.5f ? range : nearRange;
                 Vector3 dir = Quaternion.Euler(0f, angle, 0f) * forward;
-                float distance = Physics.Raycast(origin, dir, out RaycastHit hit, range, obstacleMask, QueryTriggerInteraction.Ignore)
-                    ? hit.distance : range;
+                float distance = Physics.Raycast(origin, dir, out RaycastHit hit, reach, obstacleMask, QueryTriggerInteraction.Ignore)
+                    ? hit.distance : reach;
                 vertices[i + 1] = coneMesh.transform.InverseTransformDirection(dir) * distance;
                 uvs[i + 1] = new Vector2(distance / range, 0.5f);
             }
